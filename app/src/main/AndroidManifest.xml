@@ -1,0 +1,40 @@
+<manifest package="net.masonapps.clayvr"
+          xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:name="net.masonapps.clayvr.SculptVrApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity
+            android:name="net.masonapps.clayvr.MainActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:enableVrMode="@string/gvr_vr_mode_component"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
+            android:resizeableActivity="false"
+            android:screenOrientation="landscape"
+            android:theme="@style/AppTheme">
+
+            <meta-data
+                android:name="com.google.android.vr.icon"
+                android:resource="@drawable/vr_icon_foreground"/>
+            <meta-data
+                android:name="com.google.android.vr.icon_background"
+                android:resource="@drawable/vr_icon_background"/>
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+
+                <category android:name="android.intent.category.LAUNCHER"/>
+                <category android:name="com.google.intent.category.DAYDREAM"/>
+            </intent-filter>
+        </activity>
+
+        <service android:name="net.masonapps.clayvr.service.ExportService"/>
+        
+    </application>
+</manifest>
