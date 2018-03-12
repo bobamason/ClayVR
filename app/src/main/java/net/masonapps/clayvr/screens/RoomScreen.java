@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 
 import net.masonapps.clayvr.SculptingVrGame;
+import net.masonapps.clayvr.Style;
 
 import org.masonapps.libgdxgooglevr.gfx.VrGame;
 import org.masonapps.libgdxgooglevr.gfx.VrWorldScreen;
@@ -24,6 +25,7 @@ public abstract class RoomScreen extends VrWorldScreen {
         if (!(game instanceof SculptingVrGame))
             throw new IllegalArgumentException("game must be SculptingVrGame");
         sculptingVrGame = (SculptingVrGame) game;
+        getWorld().add(Style.newGradientBackground(getVrCamera().far - 1f));
     }
 
     @Override
@@ -44,6 +46,16 @@ public abstract class RoomScreen extends VrWorldScreen {
                 super.render(batch, lights);
             }
         };
+    }
+
+    @Override
+    public void show() {
+        super.show();
+        getSculptingVrGame().setCursorVisible(true);
+        getSculptingVrGame().setControllerVisible(true);
+        getVrCamera().position.set(0, 0, 0);
+        getVrCamera().direction.set(0, 0, -1);
+        getVrCamera().up.set(0, 1, 0);
     }
 
     public SculptingVrGame getSculptingVrGame() {

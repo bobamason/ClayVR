@@ -155,9 +155,9 @@ public class SculptingVrGame extends VrGame {
     @Override
     protected void doneLoading(AssetManager assets) {
         if (!isAtlasLoaded) {
-            final Texture skyTexture = assets.get(Assets.SKY_TEXTURE, Texture.class);
-            final Model skySphere = createSkySphere(new ModelBuilder(), skyTexture, getVrCamera().far - 1f);
-            roomInstance = new ModelInstance(skySphere, new Matrix4().rotate(Vector3.Y, 180));
+//            final Texture skyTexture = assets.get(Assets.SKY_TEXTURE, Texture.class);
+//            final Model skySphere = createSkySphere(new ModelBuilder(), skyTexture, getVrCamera().far - 1f);
+//            roomInstance = new ModelInstance(skySphere, new Matrix4().rotate(Vector3.Y, 180));
 
             final TextureAtlas atlas = assets.get(Style.ATLAS_FILE, TextureAtlas.class);
             getSkin().addRegions(atlas);

@@ -52,6 +52,7 @@ import org.masonapps.libgdxgooglevr.gfx.Entity;
 import org.masonapps.libgdxgooglevr.gfx.VrGame;
 import org.masonapps.libgdxgooglevr.input.DaydreamButtonEvent;
 import org.masonapps.libgdxgooglevr.math.PlaneUtils;
+import org.masonapps.libgdxgooglevr.utils.ElapsedTimer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -110,7 +111,6 @@ public class SculptingScreen extends RoomScreen {
     private InputMode currentInputMode = InputMode.VIEW;
     private State currentState = STATE_NONE;
     private volatile boolean isMeshUpdating = false;
-    private ShapeRenderer shapeRenderer;
     //    private Stroke stroke = new Stroke();
     private float rayLength;
     private Segment segment = new Segment();
@@ -125,10 +125,10 @@ public class SculptingScreen extends RoomScreen {
         brush.setUseSymmetry(bvh.getMeshData().isSymmetryEnabled());
         this.projectName = projectName;
 //        executor = Executors.newSingleThreadExecutor();
-        shapeRenderer = new ShapeRenderer();
+        final ShapeRenderer shapeRenderer = new ShapeRenderer();
         shapeRenderer.setAutoShapeType(true);
         final SpriteBatch spriteBatch = new SpriteBatch();
-        manageDisposable(spriteBatch);
+        manageDisposable(shapeRenderer, spriteBatch);
 //        getWorld().add(Style.newGradientBackground(getVrCamera().far - 1f));
 //        getWorld().add(Grid.newInstance(20f, 0.5f, 0.02f, Color.WHITE, Color.DARK_GRAY)).setPosition(0, -1.3f, 0);
 
@@ -324,12 +324,15 @@ public class SculptingScreen extends RoomScreen {
 
     @Override
     public void update() {
+//        ElapsedTimer.getInstance().print("update");
         super.update();
         sculptingInterface.act();
         symmetryPlane.setVisible(brush.useSymmetry());
 //        buttonControls.act();
         if (isTouchPadClicked && currentState == STATE_SCULPTING) {
+            ElapsedTimer.getInstance().start("sculpt");
             sculpt();
+            ElapsedTimer.getInstance().print("sculpt");
         }
 //        if (currentState == STATE_SCULPTING) {
 //            sculptMesh.clipRadius = brush.getRadius();
@@ -337,10 +340,12 @@ public class SculptingScreen extends RoomScreen {
 //        } else {
 //            sculptMesh.clipRadius = 0f;
 //        }
+//        ElapsedTimer.getInstance().start("update");
     }
 
     @Override
     public void render(Camera camera, int whichEye) {
+//        ElapsedTimer.getInstance().print("render");
         super.render(camera, whichEye);
 //        final Matrix4 tmpMat = Pools.obtain(Matrix4.class);
 //        sculptMesh.renderEdges(camera, sculptEntity.getTransform(tmpMat));
@@ -359,6 +364,8 @@ public class SculptingScreen extends RoomScreen {
 //        }
 
         sculptingInterface.draw(camera);
+
+//        ElapsedTimer.getInstance().start("render");
     }
 
     private void saveVertexPositions() {
@@ -494,7 +501,6 @@ public class SculptingScreen extends RoomScreen {
                 pan();
             else if (transformAction == ZOOM)
                 zoom();
-            return;
         } else {
             getSculptingVrGame().setCursorVisible(true);
         }
@@ -537,6 +543,7 @@ public class SculptingScreen extends RoomScreen {
                 }
                 break;
             case VIEW:
+                currentState = STATE_VIEW_TRANSFORM;
                 startRotation.set(GdxVr.input.getControllerOrientation());
                 lastRotation.set(GdxVr.input.getControllerOrientation());
                 final Vector3 tmp = Pools.obtain(Vector3.class);
