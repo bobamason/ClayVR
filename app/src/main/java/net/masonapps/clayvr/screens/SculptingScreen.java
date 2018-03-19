@@ -22,6 +22,7 @@ import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.shapebuilders.SphereShapeBuilder;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
@@ -37,6 +38,7 @@ import com.google.vr.sdk.controller.Controller;
 
 import net.masonapps.clayvr.Style;
 import net.masonapps.clayvr.bvh.BVH;
+import net.masonapps.clayvr.math.Animator;
 import net.masonapps.clayvr.math.RotationUtil;
 import net.masonapps.clayvr.math.Segment;
 import net.masonapps.clayvr.math.Side;
@@ -88,6 +90,8 @@ public class SculptingScreen extends RoomScreen {
     //    private final ExecutorService executor;
     private final Entity sculptEntity;
     private final Ray tmpRay = new Ray();
+    private final Animator rotationAnimator;
+    private final Animator positionAnimator;
     //    private boolean isModelLoaded = false;
     private BVH.IntersectionInfo intersection = new BVH.IntersectionInfo();
     private Vector3 transformedHitPoint = new Vector3();
@@ -116,6 +120,8 @@ public class SculptingScreen extends RoomScreen {
     private Segment segment = new Segment();
     private BoundingBox searchBB = new BoundingBox();
     private boolean shouldDoDropper = false;
+    private Quaternion snappedRotation = new Quaternion();
+    private Vector3 snappedPosition = new Vector3();
 
     public SculptingScreen(VrGame game, BVH bvh, String projectName) {
         super(game);
@@ -253,7 +259,37 @@ public class SculptingScreen extends RoomScreen {
             }
         });
 
-//        brush.setUseSymmetry(false);
+        rotationAnimator = new Animator(new Animator.AnimationListener() {
+            @Override
+            public void apply(float value) {
+                final Quaternion rot = sculptEntity.getRotation();
+                rot.set(rotation).slerp(snappedRotation, value);
+                lastRotation.set(rot);
+                sculptEntity.invalidate();
+            }
+
+            @Override
+            public void finished() {
+                rotation.set(snappedRotation);
+                lastRotation.set(rotation);
+            }
+        });
+        rotationAnimator.setInterpolation(Interpolation.linear);
+
+        positionAnimator = new Animator(new Animator.AnimationListener() {
+            @Override
+            public void apply(float value) {
+                sculptEntity.getPosition().set(position).slerp(snappedPosition, value);
+                sculptEntity.invalidate();
+            }
+
+            @Override
+            public void finished() {
+                position.set(snappedPosition);
+            }
+        });
+        positionAnimator.setInterpolation(Interpolation.linear);
+        
         undoRedoCache.save(sculptMesh.getVertexArray());
     }
 
@@ -334,6 +370,10 @@ public class SculptingScreen extends RoomScreen {
             sculpt();
             ElapsedTimer.getInstance().print("sculpt");
         }
+        
+        rotationAnimator.update(GdxVr.graphics.getDeltaTime());
+        positionAnimator.update(GdxVr.graphics.getDeltaTime());
+        
 //        if (currentState == STATE_SCULPTING) {
 //            sculptMesh.clipRadius = brush.getRadius();
 //            sculptMesh.clipCenter.set(transformedHitPoint);
@@ -578,6 +618,19 @@ public class SculptingScreen extends RoomScreen {
 //                stroke.clear();
                 break;
             case STATE_VIEW_TRANSFORM:
+                if (RotationUtil.snap(rotation, snappedRotation, 0.1f)) {
+                    final Quaternion rotDiff = Pools.obtain(Quaternion.class);
+                    rotDiff.set(rotation).conjugate().mulLeft(snappedRotation);
+                    final float angleRad = rotDiff.getAngleRad();
+                    final float duration = Math.abs(angleRad < MathUtils.PI ? angleRad : MathUtils.PI2 - angleRad) / MathUtils.PI;
+                    Pools.free(rotDiff);
+                    rotationAnimator.setDuration(duration);
+                    rotationAnimator.start();
+
+//                    snappedPosition.set(center).scl(-1).mul(snappedRotation).add(projectPosition);
+                    positionAnimator.setDuration(duration);
+                    positionAnimator.start();
+                }
                 transformAction = ACTION_NONE;
                 currentState = STATE_NONE;
                 break;

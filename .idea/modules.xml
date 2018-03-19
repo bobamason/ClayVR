@@ -3,11 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/ClayVR.iml" filepath="$PROJECT_DIR$/ClayVR.iml" />
-      <module fileurl="file://C:\Users\ims_3\AndroidStudioProjects\ClayVR\ClayVR.iml" filepath="C:\Users\ims_3\AndroidStudioProjects\ClayVR\ClayVR.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://C:\Users\ims_3\AndroidStudioProjects\ClayVR\app\app.iml" filepath="C:\Users\ims_3\AndroidStudioProjects\ClayVR\app\app.iml" />
       <module fileurl="file://$PROJECT_DIR$/libgdxgvr/libgdxgvr.iml" filepath="$PROJECT_DIR$/libgdxgvr/libgdxgvr.iml" />
-      <module fileurl="file://C:\Users\ims_3\AndroidStudioProjects\ClayVR\libgdxgvr\libgdxgvr.iml" filepath="C:\Users\ims_3\AndroidStudioProjects\ClayVR\libgdxgvr\libgdxgvr.iml" />
     </modules>
   </component>
 </project>
