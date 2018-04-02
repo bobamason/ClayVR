@@ -36,6 +36,11 @@ public class CylindricalCoordinate implements Pool.Poolable {
         vertical = 0f;
     }
 
+    @Override
+    public String toString() {
+        return "(" + radius + "," + theta + "," + vertical + ")";
+    }
+
     public Vector3 toCartesian() {
         return toCartesian(new Vector3());
     }

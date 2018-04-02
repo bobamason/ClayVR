@@ -27,7 +27,7 @@ import org.masonapps.libgdxgooglevr.input.DaydreamTouchEvent;
  * Created by Bob on 10/9/2016.
  */
 
-public class VrWorldScreen extends VrScreen implements DaydreamControllerInputListener {
+public abstract class VrWorldScreen extends VrScreen implements DaydreamControllerInputListener {
     protected Environment environment;
     protected World world;
     private Array<Disposable> disposables = new Array<>();

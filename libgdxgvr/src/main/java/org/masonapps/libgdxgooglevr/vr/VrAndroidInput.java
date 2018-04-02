@@ -583,8 +583,8 @@ public class VrAndroidInput implements Input, View.OnKeyListener {
             isControllerConnected = true;
             armModel.updateHeadDirection(GdxVr.app.getVrApplicationAdapter().getVrCamera().direction);
             armModel.onControllerUpdate(controller);
-            controllerOrientation.set(controller.orientation.x, controller.orientation.y, controller.orientation.z, controller.orientation.w);
-            controllerPosition.set(armModel.pointerPosition).add(GdxVr.app.getVrApplicationAdapter().getVrCamera().position);
+            controllerOrientation.set(armModel.pointerRotation);
+            controllerPosition.set(armModel.pointerPosition);
         } else {
             isControllerConnected = false;
         }
@@ -613,10 +613,10 @@ public class VrAndroidInput implements Input, View.OnKeyListener {
 
     protected void updateInputRay() {
         if (isControllerConnected && controller != null) {
-            inputRay.origin.set(0, 0.001f, -0.085f).mul(armModel.pointerRotation).add(GdxVr.app.getVrApplicationAdapter().getVrCamera().position).add(armModel.pointerPosition);
+            inputRay.origin.set(0, 0.001f, -0.085f).mul(armModel.pointerRotation).add(armModel.pointerPosition);
             inputRay.direction.set(ArmModel.WORLD_FORWARD).mul(armModel.pointerRotation);
         } else {
-            inputRay.origin.set(GdxVr.app.getVrApplicationAdapter().getVrCamera().position);
+            inputRay.origin.set(0, 0, 0);
             inputRay.direction.set(GdxVr.app.getVrApplicationAdapter().getForwardVector());
         }
     }

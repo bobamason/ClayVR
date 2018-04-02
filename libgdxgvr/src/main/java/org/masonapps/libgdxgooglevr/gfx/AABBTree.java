@@ -54,12 +54,12 @@ public class AABBTree {
     }
 
     public void remove(AABBObject object) {
-        final LeafNode leafNode = object.getNode();
-        if (leafNode != null && leafNode.parent instanceof InnerNode) {
-            final InnerNode parent = (InnerNode) leafNode.parent;
-            if (leafNode == parent.child1) {
+        final Node node = object.getNode();
+        if (node != null && node.parent instanceof InnerNode) {
+            final InnerNode parent = (InnerNode) node.parent;
+            if (node == parent.child1) {
                 parent.child1 = null;
-            } else if (leafNode == parent.child2) {
+            } else if (node == parent.child2) {
                 parent.child2 = null;
             }
             parent.pruneInvalidNodes();
@@ -78,9 +78,9 @@ public class AABBTree {
     public interface AABBObject {
 
         @Nullable
-        LeafNode getNode();
+        Node getNode();
 
-        void setNode(@Nullable LeafNode node);
+        void setNode(@Nullable Node node);
 
         BoundingBox getAABB();
 
@@ -263,6 +263,7 @@ public class AABBTree {
     public static class IntersectionInfo {
         public float t = -1f;
         public Vector3 hitPoint = new Vector3();
+        public Vector3 normal = new Vector3();
         @Nullable
         public AABBObject object = null;
     }

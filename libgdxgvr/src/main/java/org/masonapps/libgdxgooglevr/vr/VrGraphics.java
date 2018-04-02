@@ -150,8 +150,8 @@ public class VrGraphics implements Graphics, GLSurfaceView.Renderer {
     public static void checkGlError(String tag, String op) {
         int error;
         while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
-            final StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[4];
-            Log.e(String.format("(%s:%d)", stackTraceElement.getFileName(), stackTraceElement.getLineNumber()), tag + " : " + op);
+            final StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[3];
+            Log.e(String.format("(%s:%d)", stackTraceElement.getFileName(), stackTraceElement.getLineNumber()), tag + " : " + op + ": glError " + error);
 //            throw new RuntimeException(op + ": glError " + error);
         }
     }
@@ -159,8 +159,8 @@ public class VrGraphics implements Graphics, GLSurfaceView.Renderer {
     public static void checkGlError(String op) {
         int error;
         while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
-            final StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[4];
-            Log.e(String.format("(%s:%d)", stackTraceElement.getFileName(), stackTraceElement.getLineNumber()), op);
+            final StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[3];
+            Log.e(String.format("(%s:%d)", stackTraceElement.getFileName(), stackTraceElement.getLineNumber()), op + ": glError " + error);
 //            throw new RuntimeException(op + ": glError " + error);
         }
     }

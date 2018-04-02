@@ -60,6 +60,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static net.masonapps.clayvr.screens.SculptingScreen.State.STATE_NONE;
 import static net.masonapps.clayvr.screens.SculptingScreen.State.STATE_SCULPTING;
@@ -87,7 +90,7 @@ public class SculptingScreen extends RoomScreen {
     private final UndoRedoCache undoRedoCache;
     private final Vector2 startPan = new Vector2();
     private final Vector2 pan = new Vector2();
-    //    private final ExecutorService executor;
+    private final ExecutorService executor;
     private final Entity sculptEntity;
     private final Ray tmpRay = new Ray();
     private final Animator rotationAnimator;
@@ -130,7 +133,7 @@ public class SculptingScreen extends RoomScreen {
 //        sculptMesh.clipY = -1.6f;
         brush.setUseSymmetry(bvh.getMeshData().isSymmetryEnabled());
         this.projectName = projectName;
-//        executor = Executors.newSingleThreadExecutor();
+        executor = Executors.newSingleThreadExecutor();
         final ShapeRenderer shapeRenderer = new ShapeRenderer();
         shapeRenderer.setAutoShapeType(true);
         final SpriteBatch spriteBatch = new SpriteBatch();
@@ -289,7 +292,7 @@ public class SculptingScreen extends RoomScreen {
             }
         });
         positionAnimator.setInterpolation(Interpolation.linear);
-        
+
         undoRedoCache.save(sculptMesh.getVertexArray());
     }
 
@@ -370,10 +373,10 @@ public class SculptingScreen extends RoomScreen {
             sculpt();
             ElapsedTimer.getInstance().print("sculpt");
         }
-        
+
         rotationAnimator.update(GdxVr.graphics.getDeltaTime());
         positionAnimator.update(GdxVr.graphics.getDeltaTime());
-        
+
 //        if (currentState == STATE_SCULPTING) {
 //            sculptMesh.clipRadius = brush.getRadius();
 //            sculptMesh.clipCenter.set(transformedHitPoint);
@@ -410,7 +413,7 @@ public class SculptingScreen extends RoomScreen {
 
     private void saveVertexPositions() {
         vertices.forEach(vertex -> {
-            if (!vertex.isSavedPositionUpdated()) {
+            if (!vertex.isPositionSaved()) {
                 vertex.savePosition();
                 if (brush.useSymmetry() && vertex.symmetricPair != null)
                     vertex.symmetricPair.savePosition();
@@ -470,18 +473,25 @@ public class SculptingScreen extends RoomScreen {
     }
 
     private void updateVertices(final List<Vertex> vertices) {
-        vertices.forEach(vertex -> brush.applyBrushToVertex(vertex));
+        CompletableFuture.runAsync(() -> {
+            vertices.forEach(vertex -> brush.applyBrushToVertex(vertex));
 
-        bvh.refit();
+            bvh.refit();
 
+            Arrays.stream(sculptMesh.getVertexArray())
+                    .filter(Vertex::needsUpdate)
+                    .forEach(vertex -> {
+                        if (brush.getType() != Brush.Type.VERTEX_PAINT)
+                            vertex.recalculateNormal();
+                        vertex.clearUpdateFlag();
+                    });
+        }, executor).thenRun(() -> runOnGLThread(this::updateSculptMesh));
+    }
+
+    private void updateSculptMesh() {
         Arrays.stream(sculptMesh.getVertexArray())
-                .filter(Vertex::needsUpdate)
-                .forEach(vertex -> {
-                    if (brush.getType() != Brush.Type.VERTEX_PAINT)
-                        vertex.recalculateNormal();
-                    sculptMesh.setVertex(vertex);
-                    vertex.clearUpdateFlag();
-                });
+                .filter(Vertex::isChanged)
+                .forEach(sculptMesh::setVertex);
         sculptMesh.update();
     }
 
@@ -521,6 +531,8 @@ public class SculptingScreen extends RoomScreen {
     public void dispose() {
         super.dispose();
         undoRedoCache.clear();
+        // TODO: 4/2/2018 improve executor shutdown
+        executor.shutdownNow();
     }
 
     public String getProjectName() {

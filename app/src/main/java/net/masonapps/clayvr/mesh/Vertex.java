@@ -27,10 +27,13 @@ public class Vertex {
     public float tmpVal = 0f;
     public Triangle[] triangles = new Triangle[0];
     public Vertex[] adjacentVertices = new Vertex[0];
-    public volatile int flag = 0;
     @Nullable
     public Vertex symmetricPair = null;
     private Edge[] edges = new Edge[0];
+    private boolean isChanged = true;
+    private boolean isPositionSaved = false;
+    private boolean needsUpdate = false;
+    private boolean shouldSkipSphereTest = false;
 
     public Vertex() {
         savedState = new SaveData(this);
@@ -70,13 +73,12 @@ public class Vertex {
         return this;
     }
 
-    public Vertex recalculateNormal() {
+    public void recalculateNormal() {
         normal.set(0, 0, 0);
         for (Triangle triangle : triangles) {
             normal.add(triangle.plane.normal).scl(triangle.getWeight(this));
         }
         normal.nor();
-        return this;
     }
 
     public void addEdge(Edge edge) {
@@ -110,38 +112,47 @@ public class Vertex {
 
     public void savePosition() {
         savedState.set(this);
-        flag |= FLAG_POSITION_SAVED;
+        isPositionSaved = true;
     }
 
     public void clearSavedFlag() {
-        flag &= ~Vertex.FLAG_POSITION_SAVED;
+        isPositionSaved = false;
     }
 
     public void clearUpdateFlag() {
-        flag &= ~Vertex.FLAG_UPDATE;
+        needsUpdate = false;
     }
 
     public boolean needsUpdate() {
-        return (flag & Vertex.FLAG_UPDATE) == Vertex.FLAG_UPDATE;
+        return needsUpdate;
+    }
+
+    public boolean isChanged() {
+        return isChanged;
+    }
+
+    public void clearChangedFlag() {
+        isChanged = false;
     }
 
     public boolean shouldSkipSphereTest() {
-        return (flag & Vertex.FLAG_SKIP_SPHERE_TEST) == Vertex.FLAG_SKIP_SPHERE_TEST;
+        return shouldSkipSphereTest;
     }
 
-    public boolean isSavedPositionUpdated() {
-        return (flag & Vertex.FLAG_POSITION_SAVED) == Vertex.FLAG_POSITION_SAVED;
+    public boolean isPositionSaved() {
+        return isPositionSaved;
     }
 
     public void clearFlagSkipSphereTest() {
-        flag &= ~Vertex.FLAG_SKIP_SPHERE_TEST;
+        shouldSkipSphereTest = false;
     }
 
     public void flagNeedsUpdate() {
-        flag |= Vertex.FLAG_UPDATE;
+        needsUpdate = true;
+        isChanged = true;
     }
 
     public void flagSkipSphereTest() {
-        flag |= Vertex.FLAG_SKIP_SPHERE_TEST;
+        shouldSkipSphereTest = true;
     }
 }
