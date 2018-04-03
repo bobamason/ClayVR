@@ -6,7 +6,6 @@ import com.badlogic.gdx.math.Plane;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Pools;
 
 import net.masonapps.clayvr.math.SculptUtils;
 import net.masonapps.clayvr.math.Segment;
@@ -39,6 +38,23 @@ public class Brush {
     private Color color = new Color();
     private boolean useSymmetry = true;
     private Stroke stroke;
+    private final Vector3 tmp = new Vector3();
+    private final Segment tmpSegment = new Segment();
+
+    public Brush() {
+
+    }
+
+    public Brush(Brush brush) {
+        color.set(brush.color);
+        sculptPlane.set(brush.sculptPlane);
+        strength = brush.strength;
+        type = brush.type;
+        flip = brush.flip;
+        useSymmetry = brush.useSymmetry;
+        dropOffFunction = brush.dropOffFunction;
+        update(brush.ray, brush.startHitPoint, brush.hitPoint, brush.segment);
+    }
 
     public void applyDrawBrush(Vertex vertex, Segment segment, Vector3 direction) {
         Vector3 tmp = new Vector3();
@@ -79,7 +95,6 @@ public class Brush {
     }
 
     public void applySmoothBrush(Vertex vertex, Segment segment, Vertex[] adjVerts, int smoothPasses, DropOffFunction dropOffFunction) {
-        Vector3 tmp = Pools.obtain(Vector3.class);
         final Array<Vector3> positions = new Array<>();
         for (Vertex adjVert : adjVerts) {
             positions.add(adjVert.position);
@@ -94,11 +109,9 @@ public class Brush {
             tmp.set(average).sub(vertex.position).scl(strength * radius * calculateStrength(segment.distancePointToSegment(vertex.position)));
             vertex.position.add(tmp);
         }
-        Pools.free(tmp);
     }
 
     public void applySmoothBrush(Vertex vertex, Segment segment, Vertex[] adjVerts, int smoothPasses) {
-        Vector3 tmp = Pools.obtain(Vector3.class);
         final Array<Vector3> positions = new Array<>();
         for (Vertex adjVert : adjVerts) {
             positions.add(adjVert.position);
@@ -113,7 +126,6 @@ public class Brush {
             tmp.set(average).sub(vertex.position).scl(strength * radius * calculateStrength(segment.distancePointToSegment(vertex.position)));
             vertex.position.add(tmp);
         }
-        Pools.free(tmp);
     }
 
     public void applyVertexPaintBrush(Vertex vertex, Segment segment, Color color) {
@@ -121,10 +133,8 @@ public class Brush {
     }
 
     public void doGrabBrush(Vertex vertex, Vector3 startHitPoint, Vector3 hitPoint) {
-        Vector3 tmp = Pools.obtain(Vector3.class);
         tmp.set(hitPoint).sub(startHitPoint).scl(calculateStrength(vertex.savedState.position.dst(startHitPoint)));
         vertex.position.set(vertex.savedState.position).add(tmp);
-        Pools.free(tmp);
     }
 
     public float getStrength() {
@@ -189,15 +199,13 @@ public class Brush {
     public float calculateStrength(Vector3 p, Stroke stroke) {
         float s = 0f;
         final int n = stroke.getPointCount();
-        final Segment segment = Pools.obtain(Segment.class);
         for (int i = 1; i < n; i++) {
-            segment.set(stroke.getPoint(i - 1), stroke.getPoint(i));
-            final float strength = calculateStrength(Stroke.distancePointToSegment(p, segment, i == 1, i == n - 1));
+            tmpSegment.set(stroke.getPoint(i - 1), stroke.getPoint(i));
+            final float strength = calculateStrength(Stroke.distancePointToSegment(p, tmpSegment, i == 1, i == n - 1));
             if (strength > 0f)
                 s = Math.max(s, strength);
 //                s += strength;
         }
-        Pools.free(segment);
         return s;
     }
 

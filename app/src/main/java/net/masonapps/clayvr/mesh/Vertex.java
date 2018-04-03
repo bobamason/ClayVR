@@ -15,9 +15,6 @@ import java.util.Arrays;
  */
 
 public class Vertex {
-    public static final int FLAG_UPDATE = 2;
-    public static final int FLAG_POSITION_SAVED = 4;
-    public static final int FLAG_SKIP_SPHERE_TEST = 8;
     public final Vector3 position = new Vector3();
     public final Vector3 normal = new Vector3();
     public final Vector2 uv = new Vector2();
@@ -30,7 +27,7 @@ public class Vertex {
     @Nullable
     public Vertex symmetricPair = null;
     private Edge[] edges = new Edge[0];
-    private boolean isChanged = true;
+    private volatile boolean isChanged = true;
     private boolean isPositionSaved = false;
     private boolean needsUpdate = false;
     private boolean shouldSkipSphereTest = false;

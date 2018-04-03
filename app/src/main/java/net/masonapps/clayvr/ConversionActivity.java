@@ -162,7 +162,7 @@ public class ConversionActivity extends Activity {
                     vertex.flagNeedsUpdate();
                 }
                 for (Vertex vertex : meshData.vertices) {
-                    if ((vertex.flag & Vertex.FLAG_UPDATE) == Vertex.FLAG_UPDATE) {
+                    if (vertex.needsUpdate()) {
                         vertex.recalculateNormal();
                         vertex.clearUpdateFlag();
                     }

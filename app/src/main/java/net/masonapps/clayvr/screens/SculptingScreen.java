@@ -44,6 +44,7 @@ import net.masonapps.clayvr.math.Segment;
 import net.masonapps.clayvr.math.Side;
 import net.masonapps.clayvr.mesh.Vertex;
 import net.masonapps.clayvr.sculpt.Brush;
+import net.masonapps.clayvr.sculpt.SculptAction;
 import net.masonapps.clayvr.sculpt.SculptMesh;
 import net.masonapps.clayvr.sculpt.SculptingInterface;
 import net.masonapps.clayvr.sculpt.UndoRedoCache;
@@ -55,6 +56,7 @@ import org.masonapps.libgdxgooglevr.gfx.VrGame;
 import org.masonapps.libgdxgooglevr.input.DaydreamButtonEvent;
 import org.masonapps.libgdxgooglevr.math.PlaneUtils;
 import org.masonapps.libgdxgooglevr.utils.ElapsedTimer;
+import org.masonapps.libgdxgooglevr.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -384,6 +386,8 @@ public class SculptingScreen extends RoomScreen {
 //            sculptMesh.clipRadius = 0f;
 //        }
 //        ElapsedTimer.getInstance().start("update");
+
+        Logger.d("fps: " + GdxVr.graphics.getFramesPerSecond());
     }
 
     @Override
@@ -473,8 +477,9 @@ public class SculptingScreen extends RoomScreen {
     }
 
     private void updateVertices(final List<Vertex> vertices) {
+        final SculptAction sculptAction = new SculptAction(vertices, brush);
         CompletableFuture.runAsync(() -> {
-            vertices.forEach(vertex -> brush.applyBrushToVertex(vertex));
+            sculptAction.apply();
 
             bvh.refit();
 
@@ -491,7 +496,10 @@ public class SculptingScreen extends RoomScreen {
     private void updateSculptMesh() {
         Arrays.stream(sculptMesh.getVertexArray())
                 .filter(Vertex::isChanged)
-                .forEach(sculptMesh::setVertex);
+                .forEach(vertex -> {
+                    sculptMesh.setVertex(vertex);
+                    vertex.clearChangedFlag();
+                });
         sculptMesh.update();
     }
 
@@ -639,9 +647,9 @@ public class SculptingScreen extends RoomScreen {
                     rotationAnimator.setDuration(duration);
                     rotationAnimator.start();
 
-//                    snappedPosition.set(center).scl(-1).mul(snappedRotation).add(projectPosition);
-                    positionAnimator.setDuration(duration);
-                    positionAnimator.start();
+                    snappedPosition.set(position);
+//                    positionAnimator.setDuration(duration);
+//                    positionAnimator.start();
                 }
                 transformAction = ACTION_NONE;
                 currentState = STATE_NONE;
