@@ -51,6 +51,7 @@ public class Brush {
         strength = brush.strength;
         type = brush.type;
         flip = brush.flip;
+        radius = brush.radius;
         useSymmetry = brush.useSymmetry;
         dropOffFunction = brush.dropOffFunction;
         update(brush.ray, brush.startHitPoint, brush.hitPoint, brush.segment);

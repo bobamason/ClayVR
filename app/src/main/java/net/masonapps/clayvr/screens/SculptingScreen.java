@@ -65,6 +65,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import static net.masonapps.clayvr.screens.SculptingScreen.State.STATE_NONE;
 import static net.masonapps.clayvr.screens.SculptingScreen.State.STATE_SCULPTING;
@@ -371,9 +372,7 @@ public class SculptingScreen extends RoomScreen {
         symmetryPlane.setVisible(brush.useSymmetry());
 //        buttonControls.act();
         if (isTouchPadClicked && currentState == STATE_SCULPTING) {
-            ElapsedTimer.getInstance().start("sculpt");
             sculpt();
-            ElapsedTimer.getInstance().print("sculpt");
         }
 
         rotationAnimator.update(GdxVr.graphics.getDeltaTime());
@@ -478,7 +477,8 @@ public class SculptingScreen extends RoomScreen {
 
     private void updateVertices(final List<Vertex> vertices) {
         final SculptAction sculptAction = new SculptAction(vertices, brush);
-        CompletableFuture.runAsync(() -> {
+        CompletableFuture.supplyAsync(() -> {
+            ElapsedTimer.getInstance().start("sculpt");
             sculptAction.apply();
 
             bvh.refit();
@@ -490,16 +490,20 @@ public class SculptingScreen extends RoomScreen {
                             vertex.recalculateNormal();
                         vertex.clearUpdateFlag();
                     });
-        }, executor).thenRun(() -> runOnGLThread(this::updateSculptMesh));
+            ElapsedTimer.getInstance().print("sculpt");
+            return sculptAction.getVertices().stream().map(Vertex::new).collect(Collectors.toList());
+        }, executor).thenAccept(list -> runOnGLThread(() -> updateSculptMesh(list)));
     }
 
-    private void updateSculptMesh() {
-        Arrays.stream(sculptMesh.getVertexArray())
-                .filter(Vertex::isChanged)
-                .forEach(vertex -> {
-                    sculptMesh.setVertex(vertex);
-                    vertex.clearChangedFlag();
-                });
+    private void updateSculptMesh(List<Vertex> vertices) {
+        if (brush.useSymmetry())
+            vertices.forEach(vertex -> {
+                sculptMesh.setVertex(vertex);
+                if (vertex.symmetricPair != null)
+                    sculptMesh.setVertex(vertex.symmetricPair);
+            });
+        else
+            vertices.forEach(sculptMesh::setVertex);
         sculptMesh.update();
     }
 

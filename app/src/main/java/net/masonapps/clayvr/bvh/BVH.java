@@ -21,7 +21,7 @@ import java.util.Queue;
  * Created by Bob Mason on 7/5/2017.
  */
 public class BVH {
-    public Node root;
+    public final Node root;
     private SculptMeshData meshData;
 
     public BVH(@NonNull SculptMeshData meshData, BVHBuilder.Method method, int splitLimit) {
@@ -170,7 +170,9 @@ public class BVH {
     }
 
     public void refit() {
-        root.refit();
+        synchronized (root) {
+            root.refit();
+        }
     }
 
     public static abstract class Node {

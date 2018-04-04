@@ -27,13 +27,17 @@ public class Vertex {
     @Nullable
     public Vertex symmetricPair = null;
     private Edge[] edges = new Edge[0];
-    private volatile boolean isChanged = true;
     private boolean isPositionSaved = false;
     private boolean needsUpdate = false;
     private boolean shouldSkipSphereTest = false;
 
     public Vertex() {
         savedState = new SaveData(this);
+    }
+
+    public Vertex(Vertex vertex) {
+        savedState = new SaveData(this);
+        set(vertex);
     }
 
     private static boolean isDuplicateVertex(Vertex[] vertices, Vertex vertex) {
@@ -116,20 +120,16 @@ public class Vertex {
         isPositionSaved = false;
     }
 
+    public void flagNeedsUpdate() {
+        needsUpdate = true;
+    }
+
     public void clearUpdateFlag() {
         needsUpdate = false;
     }
 
     public boolean needsUpdate() {
         return needsUpdate;
-    }
-
-    public boolean isChanged() {
-        return isChanged;
-    }
-
-    public void clearChangedFlag() {
-        isChanged = false;
     }
 
     public boolean shouldSkipSphereTest() {
@@ -142,11 +142,6 @@ public class Vertex {
 
     public void clearFlagSkipSphereTest() {
         shouldSkipSphereTest = false;
-    }
-
-    public void flagNeedsUpdate() {
-        needsUpdate = true;
-        isChanged = true;
     }
 
     public void flagSkipSphereTest() {

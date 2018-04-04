@@ -31,4 +31,8 @@ public class SculptAction implements Comparable<SculptAction> {
     public int compareTo(@NonNull SculptAction o) {
         return Long.compare(this.timestamp, o.timestamp);
     }
+
+    public List<Vertex> getVertices() {
+        return vertices;
+    }
 }
