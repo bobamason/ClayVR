@@ -128,6 +128,7 @@ public class SculptingScreen extends RoomScreen {
     private boolean shouldDoDropper = false;
     private Quaternion snappedRotation = new Quaternion();
     private Vector3 snappedPosition = new Vector3();
+    private boolean busySculpting = false;
 
     public SculptingScreen(VrGame game, BVH bvh, String projectName) {
         super(game);
@@ -378,14 +379,6 @@ public class SculptingScreen extends RoomScreen {
         rotationAnimator.update(GdxVr.graphics.getDeltaTime());
         positionAnimator.update(GdxVr.graphics.getDeltaTime());
 
-//        if (currentState == STATE_SCULPTING) {
-//            sculptMesh.clipRadius = brush.getRadius();
-//            sculptMesh.clipCenter.set(transformedHitPoint);
-//        } else {
-//            sculptMesh.clipRadius = 0f;
-//        }
-//        ElapsedTimer.getInstance().start("update");
-
         Logger.d("fps: " + GdxVr.graphics.getFramesPerSecond());
     }
 
@@ -426,8 +419,6 @@ public class SculptingScreen extends RoomScreen {
 
     private void updateBrush(Ray ray) {
         brush.update(ray, startHitPoint, hitPoint, segment);
-        if (brush.getType() != Brush.Type.VERTEX_PAINT && !isBrushGrab())
-            brush.updateSculptPlane(vertices);
     }
 
     private void rotate() {
@@ -475,8 +466,14 @@ public class SculptingScreen extends RoomScreen {
         Pools.free(tmpMat);
     }
 
-    private void updateVertices(final List<Vertex> vertices) {
-        final SculptAction sculptAction = new SculptAction(vertices, brush);
+    private void updateVertices() {
+        if (busySculpting) return;
+        busySculpting = true;
+        final SculptAction sculptAction;
+        if (isBrushGrab())
+            sculptAction = new SculptAction(vertices, brush);
+        else
+            sculptAction = new SculptAction(bvh, hitPoint, brush);
         CompletableFuture.supplyAsync(() -> {
             ElapsedTimer.getInstance().start("sculpt");
             sculptAction.apply();
@@ -492,7 +489,10 @@ public class SculptingScreen extends RoomScreen {
                     });
             ElapsedTimer.getInstance().print("sculpt");
             return sculptAction.getVertices().stream().map(Vertex::new).collect(Collectors.toList());
-        }, executor).thenAccept(list -> runOnGLThread(() -> updateSculptMesh(list)));
+        }, executor).thenAccept(list -> runOnGLThread(() -> {
+            updateSculptMesh(list);
+            busySculpting = false;
+        }));
     }
 
     private void updateSculptMesh(List<Vertex> vertices) {
@@ -739,7 +739,7 @@ public class SculptingScreen extends RoomScreen {
         if (isBrushGrab()) {
             updateHitPointUsingRayLength(ray);
             updateBrush(ray);
-            updateVertices(vertices);
+            updateVertices();
             lastHitPoint.set(hitPoint);
         } else {
             if (!testBVHIntersection(ray, true)) {
@@ -753,10 +753,10 @@ public class SculptingScreen extends RoomScreen {
 //            searchBB.min.sub(r, r, r);
 //            searchBB.max.add(r, r, r);
 //            searchBB.set(searchBB.min, searchBB.max);
-            bvh.sphereSearch(vertices, hitPoint, brush.getRadius() + 0.125f);
+//            bvh.sphereSearch(vertices, hitPoint, brush.getRadius() + 0.125f);
             saveVertexPositions();
             updateBrush(ray);
-            updateVertices(vertices);
+            updateVertices();
             lastHitPoint.set(hitPoint);
         }
         Pools.free(ray);
