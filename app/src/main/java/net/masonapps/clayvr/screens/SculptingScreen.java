@@ -91,6 +91,7 @@ public class SculptingScreen extends RoomScreen {
     private Vector3 snappedPosition = new Vector3();
     private final SculptHandler sculptHandler;
     private Vector3 hitPoint = new Vector3();
+    private ShapeRenderer shapeRenderer;
 
     public SculptingScreen(VrGame game, BVH bvh, String projectName) {
         super(game);
@@ -98,7 +99,7 @@ public class SculptingScreen extends RoomScreen {
         final Brush brush = new Brush();
         brush.setUseSymmetry(bvh.getMeshData().isSymmetryEnabled());
         this.projectName = projectName;
-        final ShapeRenderer shapeRenderer = new ShapeRenderer();
+        shapeRenderer = new ShapeRenderer();
         shapeRenderer.setAutoShapeType(true);
         final SpriteBatch spriteBatch = new SpriteBatch();
         manageDisposable(shapeRenderer, spriteBatch);
@@ -139,12 +140,7 @@ public class SculptingScreen extends RoomScreen {
         sculptHandler = new SculptHandler(bvh, brush, sculptMesh, sculptingInterface::setDropperColor);
 
         sculptEntity = sculptHandler.getSculptEntity();
-        // TODO: 12/7/2017 remove 
-//        sculptEntity.setVisible(false);
         getWorld().add(sculptEntity);
-
-        //        final ModelInstance bvhBounds = new ModelInstance(BVHUtils.createSphereModel(bvh, Color.SKY));
-//        instances.add(bvhBounds);
 
         final ModelBuilder builder = new ModelBuilder();
         sphere = getWorld().add(new Entity(new ModelInstance(ModelUtils.createSphereModel(builder, Color.GRAY))));
@@ -319,13 +315,17 @@ public class SculptingScreen extends RoomScreen {
         rotationAnimator.update(GdxVr.graphics.getDeltaTime());
         positionAnimator.update(GdxVr.graphics.getDeltaTime());
 
-        Logger.d("fps: " + GdxVr.graphics.getFramesPerSecond());
+//        Logger.d("fps: " + GdxVr.graphics.getFramesPerSecond());
     }
 
     @Override
     public void render(Camera camera, int whichEye) {
 //        ElapsedTimer.getInstance().print("render");
         super.render(camera, whichEye);
+//        shapeRenderer.begin();
+//        shapeRenderer.setProjectionMatrix(camera.combined);
+//        DebugUtils.debugBVH(shapeRenderer, sculptHandler.getBVH(), sculptEntity.getTransform(), Color.YELLOW);
+//        shapeRenderer.end();
 //        final Matrix4 tmpMat = Pools.obtain(Matrix4.class);
 //        sculptMesh.renderEdges(camera, sculptEntity.getTransform(tmpMat));
 //        Pools.free(tmpMat);
@@ -354,6 +354,7 @@ public class SculptingScreen extends RoomScreen {
         Pools.free(rotDiff);
         sculptEntity.setRotation(rotation);
         lastRotation.set(GdxVr.input.getControllerOrientation());
+        updateSymmetryPlaneTransform();
     }
 
     private void pan() {
@@ -381,6 +382,7 @@ public class SculptingScreen extends RoomScreen {
 
     private void updateSculptEntityPosition() {
         position.set(pan.x, pan.y, MODEL_Z - sculptEntity.getRadius() / SQRT2);
+        sculptEntity.setPosition(position);
         updateSymmetryPlaneTransform();
     }
 
@@ -517,9 +519,11 @@ public class SculptingScreen extends RoomScreen {
                 if (sculptingInterface.isCursorOver())
                     currentInputMode = InputMode.UI;
                 else if (!isMeshUpdating) {
-                    if (sculptEntity.intersectsRayBounds(sculptHandler.getTransformedRay(), null))
+                    if (sculptEntity.intersectsRayBounds(GdxVr.input.getInputRay(), hitPoint)) {
                         currentInputMode = InputMode.SCULPT;
-                    else
+                        sculptHandler.onControllerUpdate();
+                        Logger.d("bounds hitPoint = " + hitPoint);
+                    } else
                         currentInputMode = InputMode.VIEW;
                 } else
                     currentInputMode = InputMode.VIEW;

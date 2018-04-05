@@ -5,7 +5,6 @@ import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
-import com.badlogic.gdx.utils.Pools;
 
 import net.masonapps.clayvr.Style;
 import net.masonapps.clayvr.bvh.BVH;
@@ -15,6 +14,7 @@ import net.masonapps.clayvr.mesh.Vertex;
 import org.masonapps.libgdxgooglevr.GdxVr;
 import org.masonapps.libgdxgooglevr.gfx.Entity;
 import org.masonapps.libgdxgooglevr.utils.ElapsedTimer;
+import org.masonapps.libgdxgooglevr.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -92,8 +92,10 @@ public class SculptHandler {
     }
 
     public void sculpt() {
+        Logger.d("sculpt()");
+        ray.set(GdxVr.input.getInputRay()).mul(sculptEntity.getInverseTransform());
         if (shouldDoDropper
-                && testBVHIntersection(getTransformedRay(new Ray()), false)
+                && testBVHIntersection(ray, false)
                 && intersection.triangle != null) {
             final Vertex v1 = intersection.triangle.v1;
             final Vertex v2 = intersection.triangle.v2;
@@ -114,25 +116,16 @@ public class SculptHandler {
             dropperListener.onDropperColorChanged(closest.color);
             return;
         }
-        getTransformedRay(ray);
         if (isBrushGrab()) {
-            updateHitPointUsingRayLength(ray);
+            updateHitPointUsingRayLength();
             updateBrush(ray);
             updateVertices();
             lastHitPoint.set(hitPoint);
         } else {
             if (!testBVHIntersection(ray, true)) {
-                updateHitPointUsingRayLength(ray);
+                updateHitPointUsingRayLength();
             }
             segment.set(lastHitPoint, hitPoint);
-//            searchBB.inf();
-//            searchBB.ext(lastHitPoint);
-//            searchBB.ext(hitPoint);
-//            final float r = brush.getRadius();
-//            searchBB.min.sub(r, r, r);
-//            searchBB.max.add(r, r, r);
-//            searchBB.set(searchBB.min, searchBB.max);
-//            bvh.sphereSearch(vertices, hitPoint, brush.getRadius() + 0.125f);
             saveVertexPositions();
             updateBrush(ray);
             updateVertices();
@@ -142,7 +135,6 @@ public class SculptHandler {
 
     private boolean testBVHIntersection(Ray ray, boolean limitMovement) {
         boolean hasIntersection;
-        final Matrix4 tmpMat = Pools.obtain(Matrix4.class);
         hasIntersection = bvh.closestIntersection(ray, intersection);
         if (hasIntersection) {
             if (limitMovement) {
@@ -150,22 +142,28 @@ public class SculptHandler {
                 hitPoint.set(rawHitPoint).sub(lastHitPoint).limit(brush.getRadius() * 0.75f).add(lastHitPoint);
             } else
                 hitPoint.set(intersection.hitPoint);
-            transformedHitPoint.set(hitPoint).mul(sculptEntity.getTransform(tmpMat));
+            transformedHitPoint.set(hitPoint).mul(sculptEntity.getTransform());
+            rayLength = intersection.t;
+        } else {
+            updateHitPointUsingRayLength();
+            Logger.d("no hit");
         }
-        Pools.free(tmpMat);
-        rayLength = intersection.t;
+        Logger.d("transformedHitPoint = " + transformedHitPoint);
         return hasIntersection;
     }
 
-    private void updateHitPointUsingRayLength(Ray ray) {
+    private void updateHitPointUsingRayLength() {
         hitPoint.set(ray.direction).scl(rayLength).add(ray.origin);
-        final Matrix4 tmpMat = Pools.obtain(Matrix4.class);
         transformedHitPoint.set(hitPoint).mul(sculptEntity.getTransform(tmpMat));
-        Pools.free(tmpMat);
     }
 
+    public void onControllerUpdate() {
+        ray.set(GdxVr.input.getInputRay()).mul(sculptEntity.getInverseTransform());
+        testBVHIntersection(ray, false);
+    }
+    
     public void onTouchPadButtonDown() {
-//                stroke.addPoint(hitPoint);
+        Logger.d("onTouchPadButtonDown()");
         startHitPoint.set(hitPoint);
         lastHitPoint.set(hitPoint);
         if (isBrushGrab()) {
@@ -175,6 +173,7 @@ public class SculptHandler {
     }
 
     public void onTouchPadButtonUp() {
+        Logger.d("onTouchPadButtonUp()");
         shouldDoDropper = false;
         Arrays.stream(sculptMesh.getVertexArray()).forEach(vertex -> {
             vertex.clearFlagSkipSphereTest();
@@ -226,6 +225,10 @@ public class SculptHandler {
     }
 
     private void updateSculptMesh(List<Vertex> vertices) {
+        synchronized (bvh.root.bb) {
+            sculptEntity.getBounds().set(bvh.root.bb);
+        }
+        sculptEntity.updateDimensions();
         if (brush.useSymmetry())
             vertices.forEach(vertex -> {
                 sculptMesh.setVertex(vertex);
@@ -242,11 +245,6 @@ public class SculptHandler {
     }
 
     public Ray getTransformedRay() {
-        return getTransformedRay(tmpRay);
-    }
-
-    public Ray getTransformedRay(Ray ray) {
-        ray.set(GdxVr.input.getInputRay()).mul(sculptEntity.getInverseTransform(tmpMat));
         return ray;
     }
 

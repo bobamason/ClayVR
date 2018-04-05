@@ -38,18 +38,6 @@ public class ElapsedTimer {
             return System.nanoTime();
     }
 
-    public void printMillis(String tag) {
-        long start = getStartTime(tag);
-        final long current = System.nanoTime();
-        double millis = (current - start) / 1000000.;
-        if (isReflectionEnabled) {
-            final StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[3];
-            Log.d(String.format("(%s:%d)", stackTraceElement.getFileName(), stackTraceElement.getLineNumber()), tag + " eT = " + df.format(millis) + "ms");
-        } else {
-            Log.d(tag, tag + " eT = " + df.format(millis) + "ms");
-        }
-    }
-
     public void printNanos(String tag) {
         long start = getStartTime(tag);
         final long current = System.nanoTime();
@@ -62,7 +50,15 @@ public class ElapsedTimer {
     }
 
     public void print(String tag) {
-        printMillis(tag);
+        long start = getStartTime(tag);
+        final long current = System.nanoTime();
+        double millis = (current - start) / 1000000.;
+        if (isReflectionEnabled) {
+            final StackTraceElement stackTraceElement = Thread.currentThread().getStackTrace()[3];
+            Log.d(String.format("(%s:%d)", stackTraceElement.getFileName(), stackTraceElement.getLineNumber()), tag + " eT = " + df.format(millis) + "ms");
+        } else {
+            Log.d(tag, tag + " eT = " + df.format(millis) + "ms");
+        }
     }
 
     public void setReflectionEnabled(boolean reflectionEnabled) {
