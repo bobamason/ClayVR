@@ -33,7 +33,9 @@ import org.masonapps.libgdxgooglevr.utils.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Created by Bob on 8/1/2017.
@@ -80,14 +82,14 @@ public class ConversionActivity extends Activity {
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     private void convertFiles() {
-        final File dir = new File(Environment.getExternalStorageDirectory(), "Sculpt VR");
+        final File dir = new File(Environment.getExternalStorageDirectory(), Constants.EXPORT_FOLDER);
         if (!dir.exists())
             dir.mkdir();
-//        convertFile("models/icosphere.ply", dir, "icosphere_med");
-//        convertFile("models/icosphere2.ply", dir, "icosphere_hi");
-//        convertFile("models/human1.ply", dir, "human1");
-//        convertFile("models/human2.ply", dir, "human2");
-        exportBVH(Assets.ICOSPHERE_MESH_MED, dir, "icosphere_med");
+        final String outFilename = "human_template";
+        convertFile("models/human_template.ply", dir, outFilename)
+                .thenAccept(file -> exportBVH(file, dir, outFilename))
+                .thenRun(() -> runOnUiThread(() -> progressBar.setVisibility(View.GONE)));
+//        exportBVH(Assets.ICOSPHERE_MESH_MED, dir, "icosphere_med");
 //        exportBVH(Assets.ICOSPHERE_MESH_HI, dir, "icosphere_hi");
     }
 
@@ -97,7 +99,7 @@ public class ConversionActivity extends Activity {
         new Thread(() -> {
             try {
                 Long t0;
-                
+
                 Logger.d("starting bvh export");
                 final SculptMeshData meshData = SculptMeshParser.parse(getAssets().open(asset));
 
@@ -148,12 +150,69 @@ public class ConversionActivity extends Activity {
         }).start();
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    @SuppressLint({"SetWorldReadable", "SetWorldWritable"})
-    private void convertFile(final String inAsset, File directory, final String outFilename) {
+    private void exportBVH(File sculptFile, File directory, final String outFilename) {
         progressBar.setVisibility(View.VISIBLE);
         count++;
         new Thread(() -> {
+            try {
+                Long t0;
+
+                Logger.d("starting bvh export");
+                final SculptMeshData meshData = SculptMeshParser.parse(new FileInputStream(sculptFile));
+
+                t0 = System.currentTimeMillis();
+                final BVH bvh = new BVH(meshData, BVHBuilder.Method.SAH, 2);
+                Logger.d("bvh construction took " + (System.currentTimeMillis() - t0) + "ms");
+
+                final File file = new File(directory, outFilename + ".bvh");
+                file.setReadable(true);
+                file.setWritable(true);
+                file.setExecutable(true);
+
+                BVHFileIO.serialize(bvh, file);
+
+                final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                BVHFileIO.serialize(bvh, byteArrayOutputStream);
+                final String out = byteArrayOutputStream.toString();
+                Logger.d("OUT ->\n" + out);
+
+                t0 = System.currentTimeMillis();
+                final BVH bvhIn = BVHFileIO.deserialize(meshData, file);
+                Logger.d("bvh load from file took " + (System.currentTimeMillis() - t0) + "ms");
+
+                final ByteArrayOutputStream byteArrayOutputStream2 = new ByteArrayOutputStream();
+                BVHFileIO.serialize(bvhIn, byteArrayOutputStream2);
+                final String in = byteArrayOutputStream2.toString();
+                Logger.d("IN ->\n" + in);
+                Logger.d("IN equals OUT: " + in.equals(out));
+
+                final Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                intent.setData(Uri.fromFile(file));
+                sendBroadcast(intent);
+                runOnUiThread(() -> {
+                    Toast.makeText(ConversionActivity.this, outFilename + " successfully saved", Toast.LENGTH_SHORT).show();
+                    count--;
+                    if (count == 0)
+                        progressBar.setVisibility(View.GONE);
+                });
+            } catch (IOException e) {
+                runOnUiThread(() -> {
+                    Toast.makeText(ConversionActivity.this, "bvh " + outFilename + " failed to save", Toast.LENGTH_SHORT).show();
+                    count--;
+                    if (count == 0)
+                        progressBar.setVisibility(View.GONE);
+                });
+                Logger.e("export failed", e);
+            }
+        }).start();
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    @SuppressLint({"SetWorldReadable", "SetWorldWritable"})
+    private CompletableFuture<File> convertFile(final String inAsset, File directory, final String outFilename) {
+        progressBar.setVisibility(View.VISIBLE);
+        count++;
+        return CompletableFuture.supplyAsync(() -> {
             try {
                 final SculptMeshData meshData = PLYConverter.createMeshData(getAssets().open(inAsset), outFilename);
 //                Log.d(SculptingVrGame.class.getSimpleName(), "mesh symmetry: \n" + Arrays.toString(SymmetryMapUtils.extractSymmetryMap(meshData)));
@@ -180,6 +239,8 @@ public class ConversionActivity extends Activity {
                 intent.setData(Uri.fromFile(sculptFile));
                 sendBroadcast(intent);
 
+                return sculptFile;
+
             } catch (IOException e) {
                 e.printStackTrace();
 
@@ -197,6 +258,7 @@ public class ConversionActivity extends Activity {
                 if (count == 0)
                     progressBar.setVisibility(View.GONE);
             });
-        }).start();
+            return null;
+        });
     }
 }

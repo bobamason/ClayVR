@@ -5,7 +5,8 @@ package net.masonapps.clayvr;
  */
 
 public class Constants {
-    public static final String APP_NAME = "Vr Sculpt";
+    public static final String APP_NAME = "Clay VR";
+    public static final String EXPORT_FOLDER = "ClayVR";
     public static final String KEY_VERTICES = "vertices";
     public static final String KEY_INDICES = "indices";
     public static final String KEY_FILE_PATH = "filePath";

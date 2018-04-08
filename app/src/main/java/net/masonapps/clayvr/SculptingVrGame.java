@@ -213,7 +213,7 @@ public class SculptingVrGame extends VrGame {
                 @Override
                 public void onCreateNewProjectClicked() {
 //                switchToNewProjectScreen();
-                    createNewProject(Assets.ICOSPHERE_MESH_MED);
+                    createNewProject(Assets.HUMAN_TEMPLATE);
                 }
 
                 @Override
@@ -338,7 +338,7 @@ public class SculptingVrGame extends VrGame {
             });
         } else {
             ((SculptVrApplication) activity.getApplication()).setMeshData(sculptMesh.getMeshData().copy(), transform);
-            final File dir = new File(Environment.getExternalStorageDirectory(), "SculptVR");
+            final File dir = new File(Environment.getExternalStorageDirectory(), Constants.EXPORT_FOLDER);
             dir.mkdirs();
             String extension;
             if (fileType.equals(Constants.FILE_TYPE_OBJ))

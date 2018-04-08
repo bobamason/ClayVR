@@ -187,13 +187,13 @@ public class PLYConverter {
         int numDuplicates = 0;
         // TODO: 8/24/2017 remove rotation
         final Quaternion rotation = new Quaternion();
-        rotation.setFromCross(0f, 0f, -1f, 1f, 0f, 0f);
+//        rotation.setFromCross(0f, 0f, -1f, 1f, 0f, 0f);
         for (int i = 0; i < vertices.length; i += vertexSize) {
             boolean isDouble = false;
             final Vertex vertex = new Vertex();
             final int index = i / vertexSize;
             // TODO: 8/24/2017 remove rotation
-            vertex.position.set(vertices[i], vertices[i + 1], vertices[i + 2]).mul(rotation);
+            vertex.position.set(vertices[i], vertices[i + 1], vertices[i + 2]).mul(rotation).scl(2f);
             vertex.normal.set(vertices[i + 3], vertices[i + 4], vertices[i + 5]).mul(rotation);
 //            vertex.position.set(vertices[i], vertices[i + 1], vertices[i + 2]);
 //            vertex.normal.set(vertices[i + 3], vertices[i + 4], vertices[i + 5]);

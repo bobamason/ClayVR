@@ -12,6 +12,8 @@ public class Assets {
     public static final String FOLDER_RAW = "raw/";
     public static final String ROOM_MODEL = Assets.FOLDER_MODELS + "room_textured.g3db";
     public static final String FOLDER_AUDIO = "audio/";
+    public static final String HUMAN_TEMPLATE = FOLDER_MODELS + "human_template.sculpt";
+    public static final String HUMAN_TEMPLATE_BVH = FOLDER_MODELS + "human_template.bvh";
     public static final String ICOSPHERE_MESH_MED = FOLDER_MODELS + "icosphere_med.sculpt";
     public static final String ICOSPHERE_MED_BVH = FOLDER_MODELS + "icosphere_med.bvh";
     public static final String ICOSPHERE_MESH_HI = FOLDER_MODELS + "icosphere_hi.sculpt";
