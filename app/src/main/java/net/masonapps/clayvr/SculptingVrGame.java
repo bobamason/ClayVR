@@ -46,7 +46,6 @@ import net.masonapps.clayvr.bvh.BVHFileIO;
 import net.masonapps.clayvr.environment.SkyDomeBuilder;
 import net.masonapps.clayvr.io.SculptMeshParser;
 import net.masonapps.clayvr.mesh.SculptMeshData;
-import net.masonapps.clayvr.screens.ExportScreen;
 import net.masonapps.clayvr.screens.LoadingScreen;
 import net.masonapps.clayvr.screens.OpenProjectScreen;
 import net.masonapps.clayvr.screens.ProgressLoadingScreen;
@@ -94,7 +93,7 @@ public class SculptingVrGame extends VrGame {
     private boolean appButtonDown = false;
 
     @SuppressLint("SimpleDateFormat")
-    private static String generateNewProjectName() {
+    public static String generateNewProjectName() {
         return "sculpt_" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
 //        return "sculpt_" + MathUtils.random(5000);
     }
@@ -327,7 +326,7 @@ public class SculptingVrGame extends VrGame {
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     @SuppressLint({"SetWorldReadable", "SetWorldWritable"})
-    private void exportFile(final SculptMesh sculptMesh, final String projectName, final String fileType, Matrix4 transform) {
+    public void exportFile(final SculptMesh sculptMesh, final String projectName, final String fileType, Matrix4 transform) {
         Activity activity = GdxVr.app.getActivityWeakReference().get();
         if (activity == null || sculptingScreen == null) return;
         if (!((MainActivity) activity).areStoragePermissionsGranted()) {
@@ -528,14 +527,6 @@ public class SculptingVrGame extends VrGame {
         return skin;
     }
 
-    public void switchToExportScreen() {
-        if (sculptingScreen != null) {
-            final SculptMesh sculptMesh = sculptingScreen.getSculptMesh();
-            setScreen(new ExportScreen(this, sculptMesh, sculptingScreen.getBVH(), sculptingScreen.getProjectName(),
-                    (projectName, fileType, transform) -> exportFile(sculptMesh, projectName, fileType, transform)));
-        }
-    }
-
     public List<File> getProjectFileList() {
         final Context context = GdxVr.app.getActivityWeakReference().get();
         if (context != null)
@@ -553,8 +544,6 @@ public class SculptingVrGame extends VrGame {
     }
 
     public void onExportComplete() {
-        final VrScreen screen = getScreen();
-        if (screen instanceof ExportScreen)
-            ((ExportScreen) screen).onExportComplete();
+        // TODO: 4/9/2018 notify user 
     }
 }

@@ -36,6 +36,7 @@ import net.masonapps.clayvr.sculpt.Brush;
 import net.masonapps.clayvr.sculpt.SculptHandler;
 import net.masonapps.clayvr.sculpt.SculptMesh;
 import net.masonapps.clayvr.sculpt.SculptingInterface;
+import net.masonapps.clayvr.ui.ExportDialog;
 import net.masonapps.clayvr.ui.ViewControls;
 
 import org.masonapps.libgdxgooglevr.GdxVr;
@@ -124,8 +125,8 @@ public class SculptingScreen extends RoomScreen {
             }
 
             @Override
-            public void onExportClicked() {
-                getSculptingVrGame().switchToExportScreen();
+            public void onExportClicked(ExportDialog.ExportOptions options) {
+                getSculptingVrGame().exportFile(sculptMesh, options.projectName, options.fileType, options.transform);
             }
 
             @Override

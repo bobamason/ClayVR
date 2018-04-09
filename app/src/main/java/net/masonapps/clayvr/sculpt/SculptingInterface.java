@@ -23,6 +23,7 @@ import net.masonapps.clayvr.Style;
 import net.masonapps.clayvr.ui.ColorPickerSimple;
 import net.masonapps.clayvr.ui.ConfirmDialog;
 import net.masonapps.clayvr.ui.DialogVR;
+import net.masonapps.clayvr.ui.ExportDialog;
 import net.masonapps.clayvr.ui.VerticalImageTextButton;
 import net.masonapps.clayvr.ui.ViewControls;
 
@@ -56,6 +57,7 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
     private ImageButton brushButton;
     private CheckBox flipCheckBox;
     private CheckBox symmetryCheckBox;
+    private ExportDialog exportDialog;
 
     public SculptingInterface(Brush brush, Batch spriteBatch, Skin skin, SculptUiEventListener listener) {
         super(2f, 4f);
@@ -70,6 +72,9 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
         confirmDialog = new ConfirmDialog(spriteBatch, skin);
         brushSettingsTable = new WindowTableVR(spriteBatch, skin, 448, 480, Style.getStringResource(R.string.title_brush_settings, "Brush Settings"), windowStyleWithClose);
         viewControls = new ViewControls(spriteBatch, skin, windowStyleWithClose);
+        exportDialog = new ExportDialog(spriteBatch, skin, eventListener::onExportClicked);
+        exportDialog.dismiss();
+        addProcessor(exportDialog);
         initButtonBar();
         initColorTable();
         initConfirmDialog();
@@ -122,7 +127,10 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
         exportBtn.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                eventListener.onExportClicked();
+                if (exportDialog.isVisible())
+                    exportDialog.hide();
+                else
+                    exportDialog.show();
             }
         });
         buttonBarTable.add(exportBtn).padTop(PADDING).padBottom(PADDING).padRight(PADDING);
@@ -373,9 +381,13 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
 
     public interface SculptUiEventListener {
         void onDropperButtonClicked();
+
         void onUndoClicked();
+
         void onRedoClicked();
-        void onExportClicked();
+
+        void onExportClicked(ExportDialog.ExportOptions options);
+
         void onSymmetryChanged(boolean enabled);
     }
 }
