@@ -3,6 +3,7 @@ package net.masonapps.clayvr.sculpt;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Plane;
+import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
 import com.badlogic.gdx.utils.Array;
@@ -40,6 +41,7 @@ public class Brush {
     private Stroke stroke;
     private final Vector3 tmp = new Vector3();
     private final Segment tmpSegment = new Segment();
+    private Quaternion grabRotation = new Quaternion();
 
     public Brush() {
 
@@ -54,6 +56,7 @@ public class Brush {
         radius = brush.radius;
         useSymmetry = brush.useSymmetry;
         dropOffFunction = brush.dropOffFunction;
+        grabRotation.set(brush.grabRotation);
         update(brush.ray, brush.startHitPoint, brush.hitPoint, brush.segment);
     }
 
@@ -133,9 +136,9 @@ public class Brush {
         vertex.color.lerp(color, strength * calculateStrength(segment.distancePointToSegment(vertex.position)));
     }
 
-    public void doGrabBrush(Vertex vertex, Vector3 startHitPoint, Vector3 hitPoint) {
-        tmp.set(hitPoint).sub(startHitPoint).scl(calculateStrength(vertex.savedState.position.dst(startHitPoint)));
-        vertex.position.set(vertex.savedState.position).add(tmp);
+    public void doGrabBrush(Vertex vertex, Vector3 startHitPoint, Vector3 hitPoint, Quaternion rotation) {
+        tmp.set(vertex.savedState.position).sub(startHitPoint).mul(rotation).add(hitPoint);
+        vertex.position.set(vertex.savedState.position).lerp(tmp, calculateStrength(vertex.savedState.position.dst(startHitPoint)));
     }
 
     public float getStrength() {
@@ -168,6 +171,10 @@ public class Brush {
 
     public void setType(Type type) {
         this.type = type;
+    }
+
+    public void setGrabRotation(Quaternion rotation) {
+        this.grabRotation.set(rotation);
     }
 
     public float calculateStrength(float d) {
@@ -245,7 +252,7 @@ public class Brush {
                 applySmoothBrush(vertex, segment, vertex.getAdjacentVertices(), 4);
                 break;
             case GRAB:
-                doGrabBrush(vertex, startHitPoint, hitPoint);
+                doGrabBrush(vertex, startHitPoint, hitPoint, grabRotation);
                 break;
             case VERTEX_PAINT:
                 applyVertexPaintBrush(vertex, segment, color);

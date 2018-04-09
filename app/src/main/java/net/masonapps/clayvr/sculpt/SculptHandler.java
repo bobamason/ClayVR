@@ -3,6 +3,7 @@ package net.masonapps.clayvr.sculpt;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
 
@@ -51,6 +52,9 @@ public class SculptHandler {
     private boolean busySculpting = false;
     private List<Vertex> vertices = Collections.synchronizedList(new ArrayList<Vertex>());
     private Ray ray = new Ray();
+    private Quaternion startRotation = new Quaternion();
+    private Quaternion currentRotation = new Quaternion();
+    private Quaternion grabRotation = new Quaternion();
 
     public SculptHandler(BVH bvh, Brush brush, SculptMesh sculptMesh, DropperListener dropperListener) {
         this.bvh = bvh;
@@ -119,6 +123,8 @@ public class SculptHandler {
         if (isBrushGrab()) {
             updateHitPointUsingRayLength();
             updateBrush(ray);
+            grabRotation.set(startRotation).conjugate().mulLeft(currentRotation);
+            brush.setGrabRotation(grabRotation);
             updateVertices();
             lastHitPoint.set(hitPoint);
         } else {
@@ -160,12 +166,14 @@ public class SculptHandler {
     public void onControllerUpdate() {
         ray.set(GdxVr.input.getInputRay()).mul(sculptEntity.getInverseTransform());
         testBVHIntersection(ray, false);
+        currentRotation.set(GdxVr.input.getControllerOrientation());
     }
     
     public void onTouchPadButtonDown() {
         Logger.d("onTouchPadButtonDown()");
         startHitPoint.set(hitPoint);
         lastHitPoint.set(hitPoint);
+        startRotation.set(currentRotation);
         if (isBrushGrab()) {
             bvh.sphereSearch(vertices, hitPoint, brush.getRadius());
             saveVertexPositions();
