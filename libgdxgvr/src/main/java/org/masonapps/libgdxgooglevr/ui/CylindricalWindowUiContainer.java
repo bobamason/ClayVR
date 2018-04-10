@@ -14,7 +14,6 @@ import org.masonapps.libgdxgooglevr.input.DaydreamControllerInputListener;
 import org.masonapps.libgdxgooglevr.input.DaydreamTouchEvent;
 import org.masonapps.libgdxgooglevr.input.VrInputProcessor;
 import org.masonapps.libgdxgooglevr.math.CylindricalCoordinate;
-import org.masonapps.libgdxgooglevr.utils.Logger;
 
 /**
  * Created by Bob Mason on 10/4/2017.
@@ -90,10 +89,10 @@ public class CylindricalWindowUiContainer extends VrUiContainer implements Daydr
             final CylindricalCoordinate cylCoord = Pools.obtain(CylindricalCoordinate.class);
 
             cylCoord.setFromCartesian(hitPoint3D);
-            Logger.d("hitPoint3D pre-transform = " + hitPoint3D);
+//            Logger.d("hitPoint3D pre-transform = " + hitPoint3D);
             if (transformable)
                 hitPoint3D.mul(transform);
-            Logger.d("hitPoint3D post-transform = " + hitPoint3D);
+//            Logger.d("hitPoint3D post-transform = " + hitPoint3D);
             
             cylCoord.theta += offsetCoord.theta;
             cylCoord.vertical += offsetCoord.vertical;
@@ -102,8 +101,8 @@ public class CylindricalWindowUiContainer extends VrUiContainer implements Daydr
             cylCoord.vertical = Math.max(-height / 2f, Math.min(height / 2f, cylCoord.vertical));
             focusedWindow.setPosition(cylCoord.toCartesian(tmp));
             focusedWindow.lookAt(tmp.set(0, focusedWindow.getPosition().y, 0), Vector3.Y);
-            Logger.d("cylCoord = " + cylCoord);
-            Logger.d("focusedWindow.position = " + focusedWindow.position);
+//            Logger.d("cylCoord = " + cylCoord);
+//            Logger.d("focusedWindow.position = " + focusedWindow.position);
 
             Pools.free(cylCoord);
             Pools.free(tmp);

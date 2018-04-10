@@ -3,13 +3,14 @@ package net.masonapps.clayvr.sculpt;
 import android.support.annotation.Nullable;
 
 import net.masonapps.clayvr.bvh.BVH;
+import net.masonapps.clayvr.mesh.SculptMeshData;
 import net.masonapps.clayvr.mesh.Triangle;
 import net.masonapps.clayvr.mesh.Vertex;
 
-import org.masonapps.libgdxgooglevr.utils.Logger;
-
 import java.util.Arrays;
+import java.util.List;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 /**
  * Created by Bob on 7/21/2017.
@@ -22,31 +23,26 @@ public class UndoRedoCache {
     @Nullable
     private SaveData[] current = null;
 
-    public static void applySaveData(SculptMesh sculptMesh, @Nullable SaveData[] saveData, BVH bvh) {
-        if (saveData == null) return;
-        if (sculptMesh.getMeshData().getVertices().length != saveData.length)
+    public static List<Vertex> applySaveData(SculptMeshData meshData, @Nullable SaveData[] saveData, BVH bvh) {
+        if (saveData == null) return null;
+        if (meshData.getVertices().length != saveData.length)
             throw new IllegalArgumentException("save data array must be same length as mesh vertices array");
         for (int i = 0; i < saveData.length; i++) {
-            final Vertex vertex = sculptMesh.getVertex(i);
+            final Vertex vertex = meshData.getVertex(i);
             vertex.position.set(saveData[i].position);
             vertex.normal.set(saveData[i].normal);
             vertex.color.set(saveData[i].color);
             vertex.flagNeedsUpdate();
         }
 
-        Arrays.stream(sculptMesh.getMeshData().getTriangles())
+        Arrays.stream(meshData.getTriangles())
                 .forEach(Triangle::flagNeedsUpdate);
 
         bvh.refit();
 
-        Arrays.stream(sculptMesh.getMeshData().getVertices())
-                .filter(Vertex::needsUpdate)
-                .forEach(vertex -> {
-                    vertex.clearUpdateFlag();
-                    sculptMesh.setVertex(vertex);
-                });
-        sculptMesh.update();
-        Logger.d("applied saved state");
+        Arrays.stream(meshData.getVertices())
+                .forEach(Vertex::clearUpdateFlag);
+        return Arrays.stream(meshData.getVertices()).collect(Collectors.toList());
     }
 
     @Nullable

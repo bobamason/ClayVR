@@ -1,5 +1,7 @@
 package net.masonapps.clayvr.sculpt;
 
+import android.support.annotation.Nullable;
+
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Matrix4;
@@ -37,24 +39,24 @@ public class SculptHandler {
     private final SculptMesh sculptMesh;
     private final UndoRedoCache undoRedoCache;
     private final Entity sculptEntity;
-    private final Ray tmpRay = new Ray();
-    private final Matrix4 tmpMat = new Matrix4();
     private final DropperListener dropperListener;
-    private Vector3 startHitPoint = new Vector3();
-    private Vector3 lastHitPoint = new Vector3();
-    private Vector3 rawHitPoint = new Vector3();
-    private Vector3 transformedHitPoint = new Vector3();
-    private Vector3 hitPoint = new Vector3();
-    private float rayLength;
-    private Segment segment = new Segment();
-    private BVH.IntersectionInfo intersection = new BVH.IntersectionInfo();
-    private boolean shouldDoDropper = false;
-    private boolean busySculpting = false;
-    private List<Vertex> vertices = Collections.synchronizedList(new ArrayList<Vertex>());
-    private Ray ray = new Ray();
-    private Quaternion startRotation = new Quaternion();
-    private Quaternion currentRotation = new Quaternion();
-    private Quaternion grabRotation = new Quaternion();
+    private final Vector3 startHitPoint = new Vector3();
+    private final Vector3 lastHitPoint = new Vector3();
+    private final Vector3 rawHitPoint = new Vector3();
+    private final Vector3 transformedHitPoint = new Vector3();
+    private final Vector3 hitPoint = new Vector3();
+    private final Segment segment = new Segment();
+    private final BVH.IntersectionInfo intersection = new BVH.IntersectionInfo();
+    private final List<Vertex> vertices = Collections.synchronizedList(new ArrayList<Vertex>());
+    private final Ray ray = new Ray();
+    private final Quaternion startRotation = new Quaternion();
+    private final Quaternion currentRotation = new Quaternion();
+    private final Quaternion grabRotation = new Quaternion();
+    private final Matrix4 sculptEntityTransform = new Matrix4();
+    private float rayLength = 3f;
+    private volatile boolean shouldDoDropper = false;
+    private volatile boolean busySculpting = false;
+    private volatile boolean isSculpting = false;
 
     public SculptHandler(BVH bvh, Brush brush, SculptMesh sculptMesh, DropperListener dropperListener) {
         this.bvh = bvh;
@@ -97,46 +99,48 @@ public class SculptHandler {
 
     public void sculpt() {
         Logger.d("sculpt()");
-        ray.set(GdxVr.input.getInputRay()).mul(sculptEntity.getInverseTransform());
-        if (shouldDoDropper
-                && testBVHIntersection(ray, false)
-                && intersection.triangle != null) {
-            final Vertex v1 = intersection.triangle.v1;
-            final Vertex v2 = intersection.triangle.v2;
-            final Vertex v3 = intersection.triangle.v3;
-            Vertex closest;
-            if (v1.position.dst2(hitPoint) < v2.position.dst2(hitPoint)) {
-                if (v1.position.dst2(hitPoint) < v3.position.dst2(hitPoint))
-                    closest = v1;
-                else
-                    closest = v3;
-            } else {
-                if (v2.position.dst2(hitPoint) < v3.position.dst2(hitPoint))
-                    closest = v2;
-                else
-                    closest = v3;
-            }
-
-            dropperListener.onDropperColorChanged(closest.color);
+        if (busySculpting)
             return;
-        }
-        if (isBrushGrab()) {
-            updateHitPointUsingRayLength();
-            updateBrush(ray);
-            grabRotation.set(startRotation).conjugate().mulLeft(currentRotation);
-            brush.setGrabRotation(grabRotation);
-            updateVertices();
-            lastHitPoint.set(hitPoint);
-        } else {
-            if (!testBVHIntersection(ray, true)) {
-                updateHitPointUsingRayLength();
+        busySculpting = true;
+        CompletableFuture.supplyAsync(() -> {
+            final boolean bvhIntersection = testBVHIntersection(ray, !isBrushGrab());
+            if (shouldDoDropper()
+                    && bvhIntersection
+                    && intersection.triangle != null) {
+                final Vertex v1 = intersection.triangle.v1;
+                final Vertex v2 = intersection.triangle.v2;
+                final Vertex v3 = intersection.triangle.v3;
+                Vertex closest;
+                if (v1.position.dst2(hitPoint) < v2.position.dst2(hitPoint)) {
+                    if (v1.position.dst2(hitPoint) < v3.position.dst2(hitPoint))
+                        closest = v1;
+                    else
+                        closest = v3;
+                } else {
+                    if (v2.position.dst2(hitPoint) < v3.position.dst2(hitPoint))
+                        closest = v2;
+                    else
+                        closest = v3;
+                }
+
+                dropperListener.onDropperColorChanged(closest.color);
+                return null;
             }
-            segment.set(lastHitPoint, hitPoint);
-            saveVertexPositions();
-            updateBrush(ray);
-            updateVertices();
+            if (isBrushGrab()) {
+                updateBrush(ray);
+                grabRotation.set(startRotation).conjugate().mul(currentRotation);
+                brush.setGrabRotation(grabRotation);
+            } else {
+                segment.set(lastHitPoint, hitPoint);
+                saveVertexPositions();
+                updateBrush(ray);
+            }
             lastHitPoint.set(hitPoint);
-        }
+            return updateVertices();
+        }, executor).thenAccept(list -> runOnGLThread(() -> {
+            updateSculptMesh(list, brush.useSymmetry());
+            busySculpting = false;
+        }));
     }
 
     private boolean testBVHIntersection(Ray ray, boolean limitMovement) {
@@ -148,96 +152,110 @@ public class SculptHandler {
                 hitPoint.set(rawHitPoint).sub(lastHitPoint).limit(brush.getRadius() * 0.75f).add(lastHitPoint);
             } else
                 hitPoint.set(intersection.hitPoint);
-            transformedHitPoint.set(hitPoint).mul(sculptEntity.getTransform());
+            transformedHitPoint.set(hitPoint).mul(sculptEntityTransform);
             rayLength = intersection.t;
         } else {
             updateHitPointUsingRayLength();
-            Logger.d("no hit");
+//            Logger.d("no hit");
         }
-        Logger.d("transformedHitPoint = " + transformedHitPoint);
+//        Logger.d("transformedHitPoint = " + transformedHitPoint);
         return hasIntersection;
     }
 
     private void updateHitPointUsingRayLength() {
-        hitPoint.set(ray.direction).scl(rayLength).add(ray.origin);
-        transformedHitPoint.set(hitPoint).mul(sculptEntity.getTransform(tmpMat));
+        synchronized (hitPoint) {
+            hitPoint.set(ray.direction).scl(rayLength).add(ray.origin);
+            transformedHitPoint.set(hitPoint).mul(sculptEntityTransform);
+        }
     }
 
     public void onControllerUpdate() {
-        ray.set(GdxVr.input.getInputRay()).mul(sculptEntity.getInverseTransform());
-        testBVHIntersection(ray, false);
-        currentRotation.set(GdxVr.input.getControllerOrientation());
+        synchronized (ray) {
+            ray.set(GdxVr.input.getInputRay()).mul(sculptEntity.getInverseTransform());
+        }
+        synchronized (sculptEntityTransform) {
+            sculptEntityTransform.set(sculptEntity.getTransform());
+        }
+        synchronized (currentRotation) {
+            currentRotation.set(GdxVr.input.getControllerOrientation());
+        }
+        if (isSculpting)
+            sculpt();
+        else
+            CompletableFuture.runAsync(() -> testBVHIntersection(ray, false), executor);
     }
-    
+
     public void onTouchPadButtonDown() {
         Logger.d("onTouchPadButtonDown()");
-        startHitPoint.set(hitPoint);
-        lastHitPoint.set(hitPoint);
-        startRotation.set(currentRotation);
+        isSculpting = true;
+        synchronized (hitPoint) {
+            startHitPoint.set(hitPoint);
+            lastHitPoint.set(hitPoint);
+        }
         if (isBrushGrab()) {
-            bvh.sphereSearch(vertices, hitPoint, brush.getRadius());
-            saveVertexPositions();
+            startRotation.set(currentRotation);
+            CompletableFuture.runAsync(() -> {
+                bvh.sphereSearch(vertices, hitPoint, brush.getRadius());
+                saveVertexPositions();
+            }, executor);
         }
     }
 
     public void onTouchPadButtonUp() {
         Logger.d("onTouchPadButtonUp()");
+        isSculpting = false;
         shouldDoDropper = false;
-        Arrays.stream(sculptMesh.getVertexArray()).forEach(vertex -> {
-            vertex.clearFlagSkipSphereTest();
-            vertex.clearSavedFlag();
-        });
-        undoRedoCache.save(sculptMesh.getVertexArray());
-        vertices.clear();
+        CompletableFuture.runAsync(() -> {
+            Arrays.stream(sculptMesh.getVertexArray()).forEach(vertex -> {
+                vertex.clearFlagSkipSphereTest();
+                vertex.clearSavedFlag();
+            });
+            undoRedoCache.save(sculptMesh.getVertexArray());
+            vertices.clear();
+        }, executor);
     }
 
     private void updateBrush(Ray ray) {
         brush.update(ray, startHitPoint, hitPoint, segment);
     }
 
-    private boolean isBrushGrab() {
+    private synchronized boolean isBrushGrab() {
         return brush.getType() == Brush.Type.GRAB;
     }
 
-    private void updateVertices() {
-        if (busySculpting) return;
-        busySculpting = true;
+    private List<Vertex> updateVertices() {
         final SculptAction sculptAction;
         if (isBrushGrab())
             sculptAction = new SculptAction(vertices, brush);
         else
             sculptAction = new SculptAction(bvh, hitPoint, brush);
-        CompletableFuture.supplyAsync(() -> {
-            ElapsedTimer.getInstance().start("sculpt");
-            sculptAction.apply();
+        ElapsedTimer.getInstance().start("sculpt");
+        sculptAction.apply();
 
-            bvh.refit();
+        bvh.refit();
 
-            Arrays.stream(sculptMesh.getVertexArray())
-                    .filter(Vertex::needsUpdate)
-                    .forEach(vertex -> {
-                        if (brush.getType() != Brush.Type.VERTEX_PAINT)
-                            vertex.recalculateNormal();
-                        vertex.clearUpdateFlag();
-                    });
-            ElapsedTimer.getInstance().print("sculpt");
-            return sculptAction.getVertices().stream().map(Vertex::new).collect(Collectors.toList());
-        }, executor).thenAccept(list -> runOnGLThread(() -> {
-            updateSculptMesh(list);
-            busySculpting = false;
-        }));
+        Arrays.stream(sculptMesh.getVertexArray())
+                .filter(Vertex::needsUpdate)
+                .forEach(vertex -> {
+                    if (brush.getType() != Brush.Type.VERTEX_PAINT)
+                        vertex.recalculateNormal();
+                    vertex.clearUpdateFlag();
+                });
+        ElapsedTimer.getInstance().print("sculpt");
+        return sculptAction.getVertices().stream().map(Vertex::new).collect(Collectors.toList());
     }
 
     private void runOnGLThread(Runnable runnable) {
         GdxVr.app.postRunnable(runnable);
     }
 
-    private void updateSculptMesh(List<Vertex> vertices) {
+    private void updateSculptMesh(@Nullable List<Vertex> vertices, boolean applySymmetry) {
+        if (vertices == null) return;
         synchronized (bvh.root.bb) {
             sculptEntity.getBounds().set(bvh.root.bb);
         }
         sculptEntity.updateDimensions();
-        if (brush.useSymmetry())
+        if (applySymmetry)
             vertices.forEach(vertex -> {
                 sculptMesh.setVertex(vertex);
                 if (vertex.symmetricPair != null)
@@ -257,11 +275,21 @@ public class SculptHandler {
     }
 
     public void undo() {
-        UndoRedoCache.applySaveData(sculptMesh, undoRedoCache.undo(), bvh);
+        applySaveData(undoRedoCache.undo());
     }
 
     public void redo() {
-        UndoRedoCache.applySaveData(sculptMesh, undoRedoCache.redo(), bvh);
+        applySaveData(undoRedoCache.redo());
+    }
+
+    private void applySaveData(SaveData[] redo) {
+        if (busySculpting) return;
+        busySculpting = true;
+        CompletableFuture.supplyAsync(() -> UndoRedoCache.applySaveData(sculptMesh.getMeshData(), redo, bvh), executor)
+                .thenAccept(list -> runOnGLThread(() -> {
+                    updateSculptMesh(list, false);
+                    busySculpting = false;
+                }));
     }
 
     public BVH getBVH() {
@@ -272,7 +300,7 @@ public class SculptHandler {
         return sculptEntity;
     }
 
-    public Vector3 getTransformedHitPoint() {
+    public synchronized Vector3 getTransformedHitPoint() {
         return transformedHitPoint;
     }
 

@@ -44,7 +44,6 @@ import org.masonapps.libgdxgooglevr.gfx.Entity;
 import org.masonapps.libgdxgooglevr.gfx.VrGame;
 import org.masonapps.libgdxgooglevr.input.DaydreamButtonEvent;
 import org.masonapps.libgdxgooglevr.math.PlaneUtils;
-import org.masonapps.libgdxgooglevr.utils.Logger;
 
 import static net.masonapps.clayvr.screens.SculptingScreen.State.STATE_NONE;
 import static net.masonapps.clayvr.screens.SculptingScreen.State.STATE_SCULPTING;
@@ -309,7 +308,6 @@ public class SculptingScreen extends RoomScreen {
 //        buttonControls.act();
         if (isTouchPadClicked && currentState == STATE_SCULPTING) {
             sphere.setVisible(!sculptHandler.shouldDoDropper());
-            sculptHandler.sculpt();
             getSculptingVrGame().getCursor().position.set(sculptHandler.getTransformedHitPoint());
         }
 
@@ -523,7 +521,7 @@ public class SculptingScreen extends RoomScreen {
                     if (sculptEntity.intersectsRayBounds(GdxVr.input.getInputRay(), hitPoint)) {
                         currentInputMode = InputMode.SCULPT;
                         sculptHandler.onControllerUpdate();
-                        Logger.d("bounds hitPoint = " + hitPoint);
+//                        Logger.d("bounds hitPoint = " + hitPoint);
                     } else
                         currentInputMode = InputMode.VIEW;
                 } else
@@ -531,6 +529,7 @@ public class SculptingScreen extends RoomScreen {
                 break;
             case STATE_SCULPTING:
                 currentInputMode = InputMode.SCULPT;
+                sculptHandler.onControllerUpdate();
                 break;
             case STATE_VIEW_TRANSFORM:
                 currentInputMode = InputMode.VIEW;

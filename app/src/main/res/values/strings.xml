@@ -37,4 +37,6 @@
     <string name="size">Size</string>
     <string name="view">View</string>
     <string name="brush">brush</string>
+    <string name="human">Human</string>
+    <string name="sphere">Sphere</string>
 </resources>
