@@ -22,8 +22,6 @@ import net.masonapps.clayvr.io.PLYWriter;
 import net.masonapps.clayvr.io.STLWriter;
 import net.masonapps.clayvr.io.SculptMeshWriter;
 import net.masonapps.clayvr.mesh.SculptMeshData;
-import net.masonapps.clayvr.mesh.Triangle;
-import net.masonapps.clayvr.mesh.Vertex;
 
 import org.masonapps.libgdxgooglevr.utils.Logger;
 
@@ -60,11 +58,16 @@ public class ExportService extends IntentService {
 
         if (intent == null) return;
 
+//        Bitmap bitmap = null;
+
         final String filePath = intent.getStringExtra(Constants.KEY_FILE_PATH);
         final String fileType = intent.getStringExtra(Constants.KEY_FILE_TYPE);
         final Boolean isExternal = intent.getBooleanExtra(Constants.KEY_EXTERNAL, true);
         if (filePath == null || fileType == null)
             return;
+
+//        if (fileType.equals(Constants.FILE_TYPE_OBJ))
+//            bitmap = intent.getParcelableExtra(Constants.KEY_BITMAP);
 
         String channelId = getPackageName();
         final NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -84,7 +87,7 @@ public class ExportService extends IntentService {
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setProgress(10, 0, true);
         startForeground(NOTIFICATION_ID, nb.build());
-        
+
         final File file = new File(filePath);
         if (isExternal) {
             file.setReadable(true, false);
@@ -94,35 +97,7 @@ public class ExportService extends IntentService {
 
         Logger.d("export started " + file.getAbsolutePath());
         try {
-            final int vertexCount = meshData.getVertexCount();
-            final float[] vertices = new float[vertexCount * 9];
 
-            for (int i = 0; i < vertexCount; i++) {
-                final Vertex vertex = meshData.vertices[i];
-                vertices[i] = vertex.position.x;
-                vertices[i + 1] = vertex.position.y;
-                vertices[i + 2] = vertex.position.z;
-
-                vertices[i + 3] = vertex.normal.x;
-                vertices[i + 4] = vertex.normal.y;
-                vertices[i + 5] = vertex.normal.z;
-
-                vertices[i + 6] = vertex.uv.x;
-                vertices[i + 7] = vertex.uv.y;
-
-                vertices[i + 8] = vertex.color.toFloatBits();
-            }
-
-            final int triangleCount = meshData.getTriangleCount();
-            final short[] indices = new short[triangleCount * 3];
-
-            for (int i = 0; i < triangleCount; i++) {
-                final Triangle triangle = meshData.triangles[i];
-                indices[i] = (short) triangle.v1.index;
-                indices[i + 1] = (short) triangle.v2.index;
-                indices[i + 2] = (short) triangle.v3.index;
-            }
-            
             switch (fileType) {
                 case Constants.FILE_TYPE_OBJ:
                     final String name = FileUtils.nameWithoutExtension(file);
@@ -130,27 +105,28 @@ public class ExportService extends IntentService {
                     folder.mkdirs();
                     final File objFile = new File(folder, name + ".obj");
                     final File mtlFile = new File(folder, name + ".mtl");
-                    final File textureFile = new File(folder, name + ".png");
-                    OBJWriter.writeToFiles(objFile, mtlFile, textureFile, vertices, indices, 9, false, transform);
+                    final File textureFile = new File(folder, name + ".jpg");
+                    OBJWriter.writeToFiles(objFile, mtlFile, textureFile, meshData, false, transform);
+                    notifySystemScanner(objFile);
+                    notifySystemScanner(mtlFile);
                     break;
                 case Constants.FILE_TYPE_PLY:
-                    PLYWriter.writeToFile(file, vertices, indices, 9, transform);
+                    PLYWriter.writeToFile(file, meshData, transform);
+                    notifySystemScanner(file);
                     break;
                 case Constants.FILE_TYPE_STL:
                     STLWriter.writeToFile(file, meshData, transform);
+                    notifySystemScanner(file);
                     break;
                 case Constants.FILE_TYPE_SCULPT:
                     SculptMeshWriter.writeToFile(file, meshData, transform);
+                    notifySystemScanner(file);
                     break;
             }
 
-            if (isExternal) {
-                final Intent scanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-                scanIntent.setData(Uri.fromFile(file));
-                sendBroadcast(scanIntent);
-
+            if (isExternal)
                 sendBroadcast(new Intent(ACTION_EXPORT_COMPLETE));
-            }
+
             Logger.d("export to " + filePath + " successful");
             nb.setContentText(isSavingProject ? "project saved" : ("export to " + file.getName() + " successful"));
             nb.setProgress(0, 0, false);
@@ -165,5 +141,11 @@ public class ExportService extends IntentService {
         } finally {
             stopForeground(false);
         }
+    }
+
+    private void notifySystemScanner(File file) {
+        final Intent scanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        scanIntent.setData(Uri.fromFile(file));
+        sendBroadcast(scanIntent);
     }
 }

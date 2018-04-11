@@ -7,6 +7,9 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.NumberUtils;
 
 import net.masonapps.clayvr.Constants;
+import net.masonapps.clayvr.mesh.SculptMeshData;
+import net.masonapps.clayvr.mesh.Triangle;
+import net.masonapps.clayvr.mesh.Vertex;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -22,8 +25,8 @@ import java.util.Locale;
 
 public class PLYWriter {
 
-    public static void writeToFile(File file, float[] vertices, short[] indices, int vertexSize, Matrix4 transform) throws IOException {
-        writeToOutputStream(new FileOutputStream(file), vertices, indices, vertexSize, transform);
+    public static void writeToFile(File file, SculptMeshData meshData, Matrix4 transform) throws IOException {
+        writeToOutputStream(new FileOutputStream(file), meshData, transform);
     }
 
     @SuppressLint("DefaultLocale")
@@ -101,6 +104,81 @@ public class PLYWriter {
 
             for (int i = 0; i < indices.length; i += 3) {
                 writer.write(String.format(Locale.US, "%d %d %d %d", 3, indices[i], indices[i + 1], indices[i + 2]));
+                writer.newLine();
+            }
+        } finally {
+            writer.flush();
+            writer.close();
+        }
+    }
+
+    @SuppressLint("DefaultLocale")
+    public static void writeToOutputStream(OutputStream outputStream, SculptMeshData meshData, Matrix4 transform) throws IOException {
+        final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
+        try {
+            writer.write("ply");
+            writer.newLine();
+            writer.write("format ascii 1.0");
+            writer.newLine();
+            writer.write("comment Created by " + Constants.APP_NAME);
+            writer.newLine();
+
+            String vs = "element vertex " + meshData.vertices.length;
+            vs = vs.replace(",", "");
+            writer.write(vs);
+            writer.newLine();
+
+            writer.write("property float x");
+            writer.newLine();
+            writer.write("property float y");
+            writer.newLine();
+            writer.write("property float z");
+            writer.newLine();
+
+            writer.write("property float nx");
+            writer.newLine();
+            writer.write("property float ny");
+            writer.newLine();
+            writer.write("property float nz");
+            writer.newLine();
+
+            writer.write("property uchar red");
+            writer.newLine();
+            writer.write("property uchar green");
+            writer.newLine();
+            writer.write("property uchar blue");
+            writer.newLine();
+
+            writer.write("element face " + meshData.triangles.length);
+            writer.newLine();
+            writer.write("property list uchar uint vertex_indices");
+            writer.newLine();
+            writer.write("end_header");
+            writer.newLine();
+            final Vector3 pos = new Vector3();
+            final Vector3 nor = new Vector3();
+
+            for (Vertex vertex : meshData.vertices) {
+                pos.set(vertex.position).mul(transform);
+                writer.write(String.format(Locale.US, "%f %f %f",
+                        pos.x,
+                        pos.y,
+                        pos.z));
+                nor.set(vertex.normal).rot(transform).nor();
+                writer.write(String.format(Locale.US, " %f %f %f",
+                        nor.x,
+                        nor.y,
+                        nor.z));
+                int c = vertex.color.toIntBits();
+                writer.write(String.format(Locale.US, " %d %d %d",
+                        (c & 0x000000ff),
+                        ((c & 0x0000ff00) >>> 8),
+                        ((c & 0x00ff0000) >>> 16)));
+                writer.newLine();
+            }
+
+            for (Triangle triangle : meshData.triangles) {
+                writer.write(String.format(Locale.US, "%d %d %d %d", 3, triangle.v1.index, triangle.v2.index, triangle.v3.index));
                 writer.newLine();
             }
         } finally {

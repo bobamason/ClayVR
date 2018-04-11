@@ -17,6 +17,7 @@ public class Constants {
     public static final String FILE_TYPE_SAVE_DATA = "sculptdata";
     public static final String FILE_TYPE_SCULPT = "sculpt";
     public static final String KEY_EXTERNAL = "external";
+    public static final String KEY_BITMAP = "bitmap";
     public static final String KEY_SYMMETRY = "symmetry";
     public static final String KEY_ASSET_NAME = "assetName";
 }

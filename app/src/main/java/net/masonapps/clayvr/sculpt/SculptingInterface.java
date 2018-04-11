@@ -73,11 +73,10 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
         brushSettingsTable = new WindowTableVR(spriteBatch, skin, 448, 480, Style.getStringResource(R.string.title_brush_settings, "Brush Settings"), windowStyleWithClose);
         viewControls = new ViewControls(spriteBatch, skin, windowStyleWithClose);
         exportDialog = new ExportDialog(spriteBatch, skin, eventListener::onExportClicked);
-        exportDialog.dismiss();
-        addProcessor(exportDialog);
         initButtonBar();
         initColorTable();
         initConfirmDialog();
+        initExportDialog();
         initBrushTypeTable();
         initBrushSettingsStage();
         initViewControls();
@@ -146,6 +145,13 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
         confirmDialog.setBackground(skin.newDrawable(Style.Drawables.window, Style.COLOR_WINDOW));
         confirmDialog.setPosition(new CylindricalCoordinate(getRadius(), 90f, 0f, CylindricalCoordinate.AngleMode.degrees).toCartesian());
         addProcessor(confirmDialog);
+    }
+
+    private void initExportDialog() {
+        exportDialog.dismiss();
+        exportDialog.setBackground(skin.newDrawable(Style.Drawables.window, Style.COLOR_WINDOW));
+        exportDialog.setPosition(new CylindricalCoordinate(getRadius(), 90f, 0f, CylindricalCoordinate.AngleMode.degrees).toCartesian());
+        addProcessor(exportDialog);
     }
 
     private void initBrushSettingsStage() {
@@ -366,6 +372,10 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
         }
         if (confirmDialog.isVisible()) {
             confirmDialog.dismiss();
+            return true;
+        }
+        if (exportDialog.isVisible()) {
+            exportDialog.dismiss();
             return true;
         }
         return false;

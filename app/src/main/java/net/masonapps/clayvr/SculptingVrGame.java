@@ -210,9 +210,8 @@ public class SculptingVrGame extends VrGame {
         if (startupScreen == null) {
             startupScreen = new StartupScreen(this, new StartupScreen.StartupScreenListener() {
                 @Override
-                public void onCreateNewProjectClicked() {
-//                switchToNewProjectScreen();
-                    createNewProject(Assets.HUMAN_TEMPLATE);
+                public void onCreateNewProjectClicked(String asset) {
+                    createNewProject(asset);
                 }
 
                 @Override
@@ -336,7 +335,8 @@ public class SculptingVrGame extends VrGame {
                 }
             });
         } else {
-            ((SculptVrApplication) activity.getApplication()).setMeshData(sculptMesh.getMeshData().copy(), transform);
+            final SculptMeshData meshData = sculptMesh.getMeshData().copy();
+            ((SculptVrApplication) activity.getApplication()).setMeshData(meshData, transform);
             final File dir = new File(Environment.getExternalStorageDirectory(), Constants.EXPORT_FOLDER);
             dir.mkdirs();
             String extension;
@@ -345,33 +345,26 @@ public class SculptingVrGame extends VrGame {
             else
                 extension = "." + fileType;
 
-            File file = new File(dir, "sculpt" + projectName + extension);
+            File file = new File(dir, projectName + extension);
             int i = 2;
             while (file.exists()) {
-                file = new File(dir, "sculpt" + projectName + (i++) + extension);
+                file = new File(dir, projectName + "_" + (i++) + extension);
             }
             final Intent intent = new Intent(activity, ExportService.class);
             intent.putExtra(Constants.KEY_FILE_PATH, file.getAbsolutePath());
             intent.putExtra(Constants.KEY_FILE_TYPE, fileType);
-            intent.putExtra(Constants.KEY_ASSET_NAME, sculptMesh.getMeshData().getOriginalAssetName());
+            intent.putExtra(Constants.KEY_ASSET_NAME, meshData.getOriginalAssetName());
             intent.putExtra(Constants.KEY_EXTERNAL, true);
+//            if(fileType.equals(Constants.FILE_TYPE_OBJ)){
+//                ElapsedTimer.getInstance().start("write vertex colors to texture");
+//                Logger.d("writing vertex colors to texture...");
+//                final Bitmap bitmap = Bitmap.createBitmap(128, 128, Bitmap.Config.ARGB_8888);
+//                OBJWriter.drawVertexColorsToCanvas(new Canvas(bitmap), meshData, true);
+//                ElapsedTimer.getInstance().print("write vertex colors to texture");
+//                intent.putExtra(Constants.KEY_BITMAP, bitmap);
+//            }
             activity.startService(intent);
         }
-    }
-
-    private void saveSculptFile(Context context, SculptMesh sculptMesh) {
-        final Intent intent = new Intent(context, ExportService.class);
-        final File file = new File(context.getFilesDir(), ((SculptingScreen) getScreen()).getProjectName());
-        intent.putExtra(Constants.KEY_FILE_PATH, file.getAbsolutePath());
-        intent.putExtra(Constants.KEY_FILE_TYPE, Constants.FILE_TYPE_SCULPT);
-        intent.putExtra(Constants.KEY_ASSET_NAME, sculptMesh.getMeshData().getOriginalAssetName());
-        intent.putExtra(Constants.KEY_EXTERNAL, false);
-        intent.putExtra(Constants.KEY_VERTICES, sculptMesh.getTempVertices());
-        final short[] indices = new short[sculptMesh.getNumIndices()];
-        sculptMesh.getIndices(indices);
-        intent.putExtra(Constants.KEY_INDICES, indices);
-        intent.putExtra(Constants.KEY_SYMMETRY, sculptMesh.getMeshData().getSymmetryArray());
-        context.startService(intent);
     }
 
     @Override
@@ -545,5 +538,6 @@ public class SculptingVrGame extends VrGame {
 
     public void onExportComplete() {
         // TODO: 4/9/2018 notify user 
+        Logger.d("EXPORT COMPLETE!!!");
     }
 }

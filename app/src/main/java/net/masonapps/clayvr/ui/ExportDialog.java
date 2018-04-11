@@ -81,6 +81,7 @@ public class ExportDialog extends DialogVR {
     }
 
     private void exportClicked(String fileType) {
+        dismiss();
         listener.onExportFile(new ExportOptions(SculptingVrGame.generateNewProjectName(), fileType, new Matrix4()));
     }
 

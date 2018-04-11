@@ -13,7 +13,6 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.BaseLight;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.MathUtils;
@@ -91,7 +90,7 @@ public class SculptingScreen extends RoomScreen {
     private Vector3 snappedPosition = new Vector3();
     private final SculptHandler sculptHandler;
     private Vector3 hitPoint = new Vector3();
-    private ShapeRenderer shapeRenderer;
+//    private ShapeRenderer shapeRenderer;
 
     public SculptingScreen(VrGame game, BVH bvh, String projectName) {
         super(game);
@@ -99,10 +98,11 @@ public class SculptingScreen extends RoomScreen {
         final Brush brush = new Brush();
         brush.setUseSymmetry(bvh.getMeshData().isSymmetryEnabled());
         this.projectName = projectName;
-        shapeRenderer = new ShapeRenderer();
-        shapeRenderer.setAutoShapeType(true);
+//        shapeRenderer = new ShapeRenderer();
+//        shapeRenderer.setAutoShapeType(true);
+////        manageDisposable(shapeRenderer);
         final SpriteBatch spriteBatch = new SpriteBatch();
-        manageDisposable(shapeRenderer, spriteBatch);
+        manageDisposable(spriteBatch);
 //        getWorld().add(Style.newGradientBackground(getVrCamera().far - 1f));
 //        getWorld().add(Grid.newInstance(20f, 0.5f, 0.02f, Color.WHITE, Color.DARK_GRAY)).setPosition(0, -1.3f, 0);
 

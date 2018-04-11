@@ -103,7 +103,13 @@ public class SculptHandler {
             return;
         busySculpting = true;
         CompletableFuture.supplyAsync(() -> {
-            final boolean bvhIntersection = testBVHIntersection(ray, !isBrushGrab());
+            final boolean bvhIntersection;
+            if (isBrushGrab()) {
+                updateHitPointUsingRayLength();
+                bvhIntersection = true;
+            } else {
+                bvhIntersection = testBVHIntersection(ray, !shouldDoDropper);
+            }
             if (shouldDoDropper()
                     && bvhIntersection
                     && intersection.triangle != null) {
@@ -268,10 +274,6 @@ public class SculptHandler {
 
     public SculptMesh getSculptMesh() {
         return sculptMesh;
-    }
-
-    public Ray getTransformedRay() {
-        return ray;
     }
 
     public void undo() {

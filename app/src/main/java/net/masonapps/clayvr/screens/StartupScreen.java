@@ -90,7 +90,7 @@ public class StartupScreen extends RoomScreen {
         private final Batch spriteBatch;
         private final Skin skin;
         private StartupScreenListener listener;
-        private final CylindricalCoordinate cylCoord = new CylindricalCoordinate();
+        private final CylindricalCoordinate cylCoord = new CylindricalCoordinate(CylindricalCoordinate.AngleMode.degrees);
         private VrUiContainer mainContainer;
         private VrUiContainer templateSelectionContainer;
 
@@ -124,7 +124,7 @@ public class StartupScreen extends RoomScreen {
             });
             newBtnStage.setSize((int) newBtn.getWidth(), (int) newBtn.getHeight());
             newBtnStage.addActor(newBtn);
-            cylCoord.set(2f, -25f, 0f);
+            cylCoord.set(2f, 90f + 10f, 0f);
             newBtnStage.setPosition(cylCoord.toCartesian());
             newBtnStage.lookAt(Vector3.Zero, Vector3.Y);
             mainContainer.addProcessor(newBtnStage);
@@ -141,21 +141,21 @@ public class StartupScreen extends RoomScreen {
             });
             openBtnStage.setSize((int) openBtn.getWidth(), (int) openBtn.getHeight());
             openBtnStage.addActor(openBtn);
-            cylCoord.set(2f, 25f, 0f);
+            cylCoord.set(2f, 90f - 10f, 0f);
             openBtnStage.setPosition(cylCoord.toCartesian());
             openBtnStage.lookAt(Vector3.Zero, Vector3.Y);
             mainContainer.addProcessor(openBtnStage);
         }
 
         private void initTemplateSelectionLayout() {
-            final VirtualStage sphereBtn = createTemplateButton(R.string.sphere, "Sphere", Style.Drawables.new_project, Assets.ICOSPHERE_MESH_MED);
-            cylCoord.set(2f, -20f, 0f);
+            final VirtualStage sphereBtn = createTemplateButton(R.string.sphere, "Sphere", Style.Drawables.template_sphere, Assets.ICOSPHERE_MESH_MED);
+            cylCoord.set(2f, 90f + 10f, 0f);
             sphereBtn.setPosition(cylCoord.toCartesian());
             sphereBtn.lookAt(Vector3.Zero, Vector3.Y);
             templateSelectionContainer.addProcessor(sphereBtn);
 
-            final VirtualStage humanBtn = createTemplateButton(R.string.human, "Human", Style.Drawables.new_project, Assets.HUMAN_TEMPLATE);
-            cylCoord.set(2f, 20f, 0f);
+            final VirtualStage humanBtn = createTemplateButton(R.string.human, "Human", Style.Drawables.template_human, Assets.HUMAN_TEMPLATE);
+            cylCoord.set(2f, 90f - 10f, 0f);
             humanBtn.setPosition(cylCoord.toCartesian());
             humanBtn.lookAt(Vector3.Zero, Vector3.Y);
             templateSelectionContainer.addProcessor(humanBtn);

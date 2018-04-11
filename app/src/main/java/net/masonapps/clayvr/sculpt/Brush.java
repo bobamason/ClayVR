@@ -24,8 +24,8 @@ import static net.masonapps.clayvr.sculpt.Brush.DropOffFunction.NONE;
 public class Brush {
 
     public static final float SYMMETRY_TOLERANCE = 1e-4f;
-    public static final float MIN_RADIUS = 0.075f;
-    public static final float MAX_RADIUS = 0.75f;
+    public static final float MIN_RADIUS = 0.05f;
+    public static final float MAX_RADIUS = 0.85f;
     private float strength = 0.5f;
     private float radius = 0.2f;
     private Type type = Type.DRAW;

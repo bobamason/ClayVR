@@ -140,5 +140,7 @@ public class Style {
         public static final String ic_copy = "ic_copy";
         public static final String ic_delete = "ic_delete";
         public static final String ic_dropper = "ic_dropper";
+        public static final String template_sphere = "template_sphere";
+        public static final String template_human = "template_human";
     }
 }
