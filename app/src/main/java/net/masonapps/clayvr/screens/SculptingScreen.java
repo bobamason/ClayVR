@@ -48,9 +48,7 @@ import static net.masonapps.clayvr.screens.SculptingScreen.State.STATE_NONE;
 import static net.masonapps.clayvr.screens.SculptingScreen.State.STATE_SCULPTING;
 import static net.masonapps.clayvr.screens.SculptingScreen.State.STATE_VIEW_TRANSFORM;
 import static net.masonapps.clayvr.screens.SculptingScreen.TransformAction.ACTION_NONE;
-import static net.masonapps.clayvr.screens.SculptingScreen.TransformAction.PAN;
 import static net.masonapps.clayvr.screens.SculptingScreen.TransformAction.ROTATE;
-import static net.masonapps.clayvr.screens.SculptingScreen.TransformAction.ZOOM;
 
 /**
  * Created by Bob Mason on 7/7/2017.
@@ -60,17 +58,16 @@ public class SculptingScreen extends RoomScreen {
 
     private static final float SQRT2 = (float) Math.sqrt(2);
     private static final String TAG = SculptingScreen.class.getSimpleName();
-    private static final float MODEL_Z = -2.2f;
+    private static float modelZ = -2.2f;
     private static final float UI_ALPHA = 0.25f;
     private final SculptingInterface sculptingInterface;
-    private final Vector3 position = new Vector3(0, 0, MODEL_Z);
+    private final Vector3 position = new Vector3(0, 0, modelZ);
     //    private final SculptControlsVirtualStage buttonControls;
     private final Vector2 startPan = new Vector2();
     private final Vector2 pan = new Vector2();
     private final Ray tmpRay = new Ray();
     private final Entity sculptEntity;
     private final Animator rotationAnimator;
-    private final Animator positionAnimator;
     //    private boolean isModelLoaded = false;
     private Entity sphere;
     private boolean isTouchPadClicked = false;
@@ -132,6 +129,17 @@ public class SculptingScreen extends RoomScreen {
             public void onSymmetryChanged(boolean enabled) {
                 brush.setUseSymmetry(enabled);
                 sculptMesh.getMeshData().setSymmetryEnabled(enabled);
+            }
+
+            @Override
+            public void onPan(float dx, float dy) {
+                pan.add(dx, dy).limit(5f);
+            }
+
+            @Override
+            public void onZoom(float zoom) {
+                SculptingScreen.this.zoom = zoom;
+                // TODO: 4/12/2018 zoom 
             }
         };
         sculptingInterface = new SculptingInterface(brush, spriteBatch, getSculptingVrGame().getSkin(), sculptUiEventListener);
@@ -235,22 +243,6 @@ public class SculptingScreen extends RoomScreen {
         });
         rotationAnimator.setInterpolation(Interpolation.linear);
 
-        positionAnimator = new Animator(new Animator.AnimationListener() {
-            @Override
-            public void apply(float value) {
-                final Vector3 pos = sculptEntity.getPosition();
-                pos.set(SculptingScreen.this.position).slerp(snappedPosition, value);
-                pan.set(pos.x, pos.y);
-                updateSculptEntityPosition();
-            }
-
-            @Override
-            public void finished() {
-                position.set(snappedPosition);
-            }
-        });
-        positionAnimator.setInterpolation(Interpolation.linear);
-
     }
 
     @Override
@@ -312,8 +304,6 @@ public class SculptingScreen extends RoomScreen {
         }
 
         rotationAnimator.update(GdxVr.graphics.getDeltaTime());
-        positionAnimator.update(GdxVr.graphics.getDeltaTime());
-
 //        Logger.d("fps: " + GdxVr.graphics.getFramesPerSecond());
     }
 
@@ -356,16 +346,6 @@ public class SculptingScreen extends RoomScreen {
         updateSymmetryPlaneTransform();
     }
 
-    private void pan() {
-        if (Intersector.intersectRayPlane(GdxVr.input.getInputRay(), hitPlane, hitPoint)) {
-            final Vector2 tmp = Pools.obtain(Vector2.class);
-            PlaneUtils.toSubSpace(hitPlane, hitPoint, tmp);
-            pan.set(startPan).add(tmp.limit(2f));
-            updateSculptEntityPosition();
-            Pools.free(tmp);
-        }
-    }
-
     private void zoom() {
         if (Intersector.intersectRayPlane(GdxVr.input.getInputRay(), hitPlane, hitPoint)) {
             final Vector2 tmp = Pools.obtain(Vector2.class);
@@ -380,7 +360,7 @@ public class SculptingScreen extends RoomScreen {
     }
 
     private void updateSculptEntityPosition() {
-        position.set(pan.x, pan.y, MODEL_Z - sculptEntity.getRadius() / SQRT2);
+        position.set(pan.x, pan.y, 0).mul(rotation).add(0, 0, modelZ - sculptEntity.getRadius() / SQRT2);
         sculptEntity.setPosition(position);
         updateSymmetryPlaneTransform();
     }
@@ -427,10 +407,6 @@ public class SculptingScreen extends RoomScreen {
             sculptingInterface.setVisible(false);
             if (transformAction == ROTATE)
                 rotate();
-            else if (transformAction == PAN)
-                pan();
-            else if (transformAction == ZOOM)
-                zoom();
         } else {
             getSculptingVrGame().setCursorVisible(true);
         }
@@ -542,7 +518,7 @@ public class SculptingScreen extends RoomScreen {
     }
 
     enum TransformAction {
-        ACTION_NONE, ROTATE, PAN, ZOOM
+        ACTION_NONE, ROTATE
     }
 
     enum InputMode {

@@ -24,6 +24,7 @@ import net.masonapps.clayvr.ui.ColorPickerSimple;
 import net.masonapps.clayvr.ui.ConfirmDialog;
 import net.masonapps.clayvr.ui.DialogVR;
 import net.masonapps.clayvr.ui.ExportDialog;
+import net.masonapps.clayvr.ui.PanStage;
 import net.masonapps.clayvr.ui.VerticalImageTextButton;
 import net.masonapps.clayvr.ui.ViewControls;
 
@@ -58,6 +59,7 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
     private CheckBox flipCheckBox;
     private CheckBox symmetryCheckBox;
     private ExportDialog exportDialog;
+    private PanStage panStage;
 
     public SculptingInterface(Brush brush, Batch spriteBatch, Skin skin, SculptUiEventListener listener) {
         super(2f, 4f);
@@ -73,10 +75,12 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
         brushSettingsTable = new WindowTableVR(spriteBatch, skin, 448, 480, Style.getStringResource(R.string.title_brush_settings, "Brush Settings"), windowStyleWithClose);
         viewControls = new ViewControls(spriteBatch, skin, windowStyleWithClose);
         exportDialog = new ExportDialog(spriteBatch, skin, eventListener::onExportClicked);
+        panStage = new PanStage(spriteBatch, skin, eventListener::onPan);
         initButtonBar();
         initColorTable();
         initConfirmDialog();
         initExportDialog();
+        initPanStage();
         initBrushTypeTable();
         initBrushSettingsStage();
         initViewControls();
@@ -122,6 +126,18 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
         });
         buttonBarTable.add(viewBtn).padTop(PADDING).padBottom(PADDING).padRight(PADDING);
 
+        final VerticalImageTextButton panBtn = new VerticalImageTextButton(Style.getStringResource(R.string.pan, "pan"), Style.createImageTextButtonStyle(skin, Style.Drawables.ic_pan));
+        panBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (panStage.isVisible())
+                    panStage.setVisible(false);
+                else
+                    panStage.setVisible(true);
+            }
+        });
+        buttonBarTable.add(panBtn).padTop(PADDING).padBottom(PADDING).padRight(PADDING);
+
         final VerticalImageTextButton exportBtn = new VerticalImageTextButton(Style.getStringResource(R.string.export, "export"), Style.createImageTextButtonStyle(skin, Style.Drawables.ic_export));
         exportBtn.addListener(new ClickListener() {
             @Override
@@ -152,6 +168,14 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
         exportDialog.setBackground(skin.newDrawable(Style.Drawables.window, Style.COLOR_WINDOW));
         exportDialog.setPosition(new CylindricalCoordinate(getRadius(), 90f, 0f, CylindricalCoordinate.AngleMode.degrees).toCartesian());
         addProcessor(exportDialog);
+    }
+
+    private void initPanStage() {
+        panStage.setVisible(false);
+        panStage.setBackground(skin.newDrawable(Style.Drawables.window, new Color(0.5f, 0.5f, 0.5f, 0.05f)));
+
+        panStage.setPosition(new CylindricalCoordinate(getRadius(), 90f, 0f, CylindricalCoordinate.AngleMode.degrees).toCartesian());
+        addProcessor(panStage);
     }
 
     private void initBrushSettingsStage() {
@@ -378,6 +402,10 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
             exportDialog.dismiss();
             return true;
         }
+        if (panStage.isVisible()) {
+            panStage.setVisible(false);
+            return true;
+        }
         return false;
     }
 
@@ -399,5 +427,9 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
         void onExportClicked(ExportDialog.ExportOptions options);
 
         void onSymmetryChanged(boolean enabled);
+
+        void onPan(float dx, float dy);
+
+        void onZoom(float zoom);
     }
 }
