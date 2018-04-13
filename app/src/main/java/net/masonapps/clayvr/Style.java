@@ -48,8 +48,9 @@ public class Style {
     public static final Color TITLE_FONT_COLOR = new Color(FONT_COLOR);
     public static final Color SLIDER_BG_COLOR = new Color(Color.GRAY);
     public static final Color COLOR_WINDOW = new Color(0x000000aa);
-    private static final Color COLOR_GRADIENT_BOTTOM = new Color(Color.BLACK);
-    private static final Color COLOR_GRADIENT_TOP = new Color(Color.SKY);
+    private static final Color COLOR_GRADIENT_TOP = new Color(Color.GRAY);
+    private static final Color COLOR_GRADIENT_MIDDLE = new Color(Color.LIGHT_GRAY);
+    private static final Color COLOR_GRADIENT_BOTTOM = new Color(Color.DARK_GRAY);
     private static final Color COLOR_TITLE_BAR = new Color(COLOR_PRIMARY);
 
     public static ImageButton.ImageButtonStyle createImageButtonStyle(Skin skin, String name) {
@@ -94,7 +95,7 @@ public class Style {
     }
 
     public static Entity newGradientBackground(float r) {
-        return GradientSphere.newInstance(r, 32, 16, Style.COLOR_GRADIENT_BOTTOM, Style.COLOR_GRADIENT_TOP);
+        return GradientSphere.newInstance(r, 32, 16, Style.COLOR_GRADIENT_TOP, Style.COLOR_GRADIENT_MIDDLE, Style.COLOR_GRADIENT_BOTTOM);
     }
 
     public static WindowVR.WindowVrStyle createWindowVrStyle(Skin skin) {
@@ -143,5 +144,6 @@ public class Style {
         public static final String pan_arrows = "pan_arrows";
         public static final String template_sphere = "template_sphere";
         public static final String template_human = "template_human";
+        public static final String grid = "grid";
     }
 }

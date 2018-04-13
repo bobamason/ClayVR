@@ -10,11 +10,17 @@ precision highp float;
 #endif
 
 varying vec3 v_pos;
-uniform vec4 u_color1;
-uniform vec4 u_color2;
+uniform vec4 u_colorTop;
+uniform vec4 u_colorMiddle;
+uniform vec4 u_colorBottom;
 uniform float u_gradient;
 
 void main(){
-    float t = clamp((v_pos.y + u_gradient) / (2.0 * u_gradient), 0.0, 1.0);
-    gl_FragColor = mix(u_color1, u_color2, t);
+    
+    if(v_pos.y > 0.0){
+        float t = clamp(v_pos.y  / u_gradient, 0.0, 1.0);
+        gl_FragColor = mix(u_colorMiddle, u_colorTop, t * t);
+    } else {
+        gl_FragColor = u_colorBottom;
+    }
 }

@@ -23,7 +23,7 @@ public class ModelUtils {
         return builder.end();
     }
 
-    public static Model createRect(ModelBuilder modelBuilder, Color color) {
+    public static Model createTransparentRect(ModelBuilder modelBuilder, Color color) {
         final Material material = new Material(ColorAttribute.createDiffuse(color), new BlendingAttribute(true, 0.25f), IntAttribute.createCullFace(0));
         final float r = 1f;
         return modelBuilder.createRect(
@@ -31,7 +31,17 @@ public class ModelUtils {
                 0, r, r,
                 0, r, -r,
                 0, -r, -r,
-                0, 0, r,
+                0f, 0f, 1f,
                 material, VertexAttributes.Usage.Position);
+    }
+
+    public static Model createFloorRect(ModelBuilder modelBuilder, float r, Material material) {
+        return modelBuilder.createRect(
+                -r, 0, r,
+                r, 0, r,
+                r, 0, -r,
+                -r, 0, -r,
+                0f, 1f, 0f,
+                material, VertexAttributes.Usage.Position | VertexAttributes.Usage.TextureCoordinates);
     }
 }

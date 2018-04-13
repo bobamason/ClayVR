@@ -33,12 +33,13 @@ public class GradientSphere extends Entity {
         setShader(gradientShader);
     }
 
-    public static GradientSphere newInstance(float radius, int divisionsU, int divisionsV, Color color1, Color color2) {
+    public static GradientSphere newInstance(float radius, int divisionsU, int divisionsV, Color cTop, Color cMiddle, Color cBottom) {
         final float d = radius * 2f;
         final Model sphere = new ModelBuilder().createSphere(d, d, d, divisionsU, divisionsV, new Material(), VertexAttributes.Usage.Position);
         final GradientSphere gradientSphere = new GradientSphere(new ModelInstance(sphere));
-        gradientSphere.getGradientShader().setColor1(color1);
-        gradientSphere.getGradientShader().setColor2(color2);
+        gradientSphere.getGradientShader().setColorTop(cTop);
+        gradientSphere.getGradientShader().setColorMiddle(cMiddle);
+        gradientSphere.getGradientShader().setColorBottom(cBottom);
         gradientSphere.getGradientShader().setGradientHeight(radius);
         return gradientSphere;
     }
@@ -53,11 +54,13 @@ public class GradientSphere extends Entity {
         private static String fragmentShader = null;
         private final int u_projTrans = register(new Uniform("u_projTrans"));
         private final int u_worldTrans = register(new Uniform("u_worldTrans"));
-        private final int u_color1 = register(new Uniform("u_color1"));
-        private final int u_color2 = register(new Uniform("u_color2"));
+        private final int u_colorTop = register(new Uniform("u_colorTop"));
+        private final int u_colorMiddle = register(new Uniform("u_colorMiddle"));
+        private final int u_colorBottom = register(new Uniform("u_colorBottom"));
         private final int u_gradient = register(new Uniform("u_gradient"));
-        private final Color color1 = new Color();
-        private final Color color2 = new Color();
+        private final Color colorTop = new Color();
+        private final Color colorMiddle = new Color();
+        private final Color colorBottom = new Color();
         private final ShaderProgram program;
         private float gradientHeight = 10f;
 
@@ -109,8 +112,9 @@ public class GradientSphere extends Entity {
         @Override
         public void render(Renderable renderable) {
             set(u_worldTrans, renderable.worldTransform);
-            set(u_color1, color1);
-            set(u_color2, color2);
+            set(u_colorTop, colorTop);
+            set(u_colorMiddle, colorMiddle);
+            set(u_colorBottom, colorBottom);
             set(u_gradient, gradientHeight);
             renderable.meshPart.render(program);
         }
@@ -126,16 +130,20 @@ public class GradientSphere extends Entity {
             program.dispose();
         }
 
-        public void setColor1(Color color) {
-            this.color1.set(color);
-        }
-
-        public void setColor2(Color color) {
-            this.color2.set(color);
-        }
-
         public void setGradientHeight(float gradientHeight) {
             this.gradientHeight = gradientHeight;
+        }
+
+        public void setColorTop(Color colorTop) {
+            this.colorTop.set(colorTop);
+        }
+
+        public void setColorMiddle(Color colorMiddle) {
+            this.colorMiddle.set(colorMiddle);
+        }
+
+        public void setColorBottom(Color colorBottom) {
+            this.colorBottom.set(colorBottom);
         }
     }
 }

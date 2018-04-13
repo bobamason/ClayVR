@@ -155,7 +155,7 @@ public class SculptingScreen extends RoomScreen {
         sphere.setLightingEnabled(true);
         sphere.setVisible(false);
 
-        symmetryPlane = getWorld().add(new Entity(new ModelInstance(ModelUtils.createRect(builder, Color.SKY))));
+        symmetryPlane = getWorld().add(new Entity(new ModelInstance(ModelUtils.createTransparentRect(builder, Color.SKY))));
         symmetryPlane.setLightingEnabled(false);
         symmetryPlane.setVisible(brush.useSymmetry());
 
