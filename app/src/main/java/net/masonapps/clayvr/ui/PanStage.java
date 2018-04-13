@@ -8,6 +8,7 @@ import com.badlogic.gdx.utils.Align;
 import net.masonapps.clayvr.Style;
 
 import org.masonapps.libgdxgooglevr.ui.VirtualStage;
+import org.masonapps.libgdxgooglevr.utils.Logger;
 
 /**
  * Created by Bob Mason on 4/12/2018.
@@ -23,7 +24,7 @@ public class PanStage extends VirtualStage {
         super(batch, 1000, 1000);
         this.listener = listener;
         setTouchable(true);
-        final Image image = new Image(skin.newDrawable(Style.Drawables.pan_arrows, Style.COLOR_ACCENT));
+        final Image image = new Image(skin.newDrawable(Style.Drawables.pan_arrows, Style.COLOR_PRIMARY_LIGHT));
         image.setPosition(getWidth() / 2, getHeight() / 2, Align.center);
         addActor(image);
     }
@@ -35,13 +36,17 @@ public class PanStage extends VirtualStage {
             startY = getHitPoint3D().y;
             isDragging = true;
         }
+        Logger.d("pan touchDown isDragging = " + isDragging + " startX = " + startX + " startY = " + startY);
         return isDragging;
     }
 
     @Override
     public boolean touchDragged(int screenX, int screenY, int pointer) {
         if (isDragging && getHitPoint3D() != null) {
-            listener.onPan(getHitPoint3D().x - startX, getHitPoint3D().y - startY);
+            final float dx = getHitPoint3D().x - startX;
+            final float dy = getHitPoint3D().y - startY;
+            listener.onPan(dx, dy);
+            Logger.d("pan dragged dx = " + dx + " dy = " + dy);
         }
         return isDragging;
     }
