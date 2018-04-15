@@ -18,8 +18,9 @@ uniform float u_gradient;
 void main(){
     if(v_pos.y > 0.0){
         float t = clamp(v_pos.y  / u_gradient, 0.0, 1.0);
-        gl_FragColor = mix(u_colorMiddle, u_colorTop, t);
+        gl_FragColor = mix(u_colorMiddle, u_colorTop, t * t);
     } else {
-        gl_FragColor = u_colorBottom;
+        float t = clamp(-v_pos.y  / u_gradient, 0.0, 1.0);
+        gl_FragColor = mix(u_colorMiddle, u_colorBottom, t * t);
     }
 }
