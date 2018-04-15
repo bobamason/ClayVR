@@ -48,8 +48,8 @@ public class Style {
     public static final Color TITLE_FONT_COLOR = new Color(FONT_COLOR);
     public static final Color SLIDER_BG_COLOR = new Color(Color.GRAY);
     public static final Color COLOR_WINDOW = new Color(0x000000aa);
-    private static final Color COLOR_GRADIENT_TOP = new Color(Color.GRAY);
-    private static final Color COLOR_GRADIENT_MIDDLE = new Color(Color.LIGHT_GRAY);
+    private static final Color COLOR_GRADIENT_TOP = new Color(Color.LIGHT_GRAY);
+    private static final Color COLOR_GRADIENT_MIDDLE = new Color(Color.GRAY);
     private static final Color COLOR_GRADIENT_BOTTOM = new Color(Color.DARK_GRAY);
     private static final Color COLOR_TITLE_BAR = new Color(COLOR_PRIMARY);
 

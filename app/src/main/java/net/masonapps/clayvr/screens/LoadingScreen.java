@@ -27,7 +27,7 @@ public class LoadingScreen extends VrWorldScreen {
 
     public LoadingScreen(VrGame game) {
         super(game);
-        getWorld().add(Style.newGradientBackground(getVrCamera().far - 1f));
+        getWorld().add(Style.newGradientBackground(getVrCamera().far - 2f));
         setBackgroundColor(Color.BLUE);
 
         final SpriteBatch spriteBatch = new SpriteBatch();

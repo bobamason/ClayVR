@@ -33,9 +33,9 @@ public abstract class RoomScreen extends VrWorldScreen {
             throw new IllegalArgumentException("game must be SculptingVrGame");
         sculptingVrGame = (SculptingVrGame) game;
         final float environmentOffset = -1.2f;
-        getWorld().add(Style.newGradientBackground(getVrCamera().far - 2f)).setPosition(0, environmentOffset, 0);
         final Material floorMat = new Material(TextureAttribute.createDiffuse(getSculptingVrGame().getSkin().getRegion(Style.Drawables.grid)), new BlendingAttribute(true, 1f), FloatAttribute.createAlphaTest(0.1f));
         getWorld().add(new Entity(new ModelInstance(ModelUtils.createFloorRect(new ModelBuilder(), 4f, floorMat)))).setPosition(0, environmentOffset, 0);
+        getWorld().add(Style.newGradientBackground(getVrCamera().far - 2f));
     }
 
     @Override
