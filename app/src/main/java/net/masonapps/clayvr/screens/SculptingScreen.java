@@ -416,6 +416,7 @@ public class SculptingScreen extends RoomScreen {
 //        buttonControls.setVisible(currentInputMode == InputMode.VIEW);
         sphere.setVisible(currentInputMode == InputMode.SCULPT && !sculptHandler.shouldDoDropper());
         getSculptingVrGame().getCursor().setVisible(!sphere.isVisible());
+        buttonControls.setVisible(currentInputMode == InputMode.VIEW);
 
         if (currentState == STATE_VIEW_TRANSFORM) {
             getSculptingVrGame().setCursorVisible(false);

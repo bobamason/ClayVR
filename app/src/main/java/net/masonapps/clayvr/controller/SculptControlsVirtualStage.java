@@ -58,7 +58,7 @@ public class SculptControlsVirtualStage extends VirtualStage {
         interpolation = Interpolation.swing;
 
         label = new Label("", skin, Style.DEFAULT_FONT, Style.COLOR_ACCENT);
-        label.setFontScale(0.2f);
+        label.setFontScale(0.5f);
         labelStrings = new String[]{topLabel, bottomLabel, leftLabel, rightLabel};
 
         images = new Image[4];
