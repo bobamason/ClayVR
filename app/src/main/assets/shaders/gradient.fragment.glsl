@@ -17,10 +17,10 @@ uniform float u_gradient;
 
 void main(){
     if(v_pos.y > 0.0){
-        float t = clamp(v_pos.y  / u_gradient, 0.0, 1.0);
-        gl_FragColor = mix(u_colorMiddle, u_colorTop, t * t);
+        float t = clamp(v_pos.y  / u_gradient * 2.0, 0.0, 1.0);
+        gl_FragColor = mix(u_colorMiddle, u_colorTop, t);
     } else {
-        float t = clamp(-v_pos.y  / u_gradient, 0.0, 1.0);
-        gl_FragColor = mix(u_colorMiddle, u_colorBottom, t * t);
+        float t = clamp(-v_pos.y  / u_gradient * 2.0, 0.0, 1.0);
+        gl_FragColor = mix(u_colorMiddle, u_colorBottom, t);
     }
 }

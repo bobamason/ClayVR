@@ -137,7 +137,8 @@ public class Brush {
     }
 
     public void doGrabBrush(Vertex vertex, Vector3 startHitPoint, Vector3 hitPoint, Quaternion rotation) {
-        tmp.set(vertex.savedState.position).sub(startHitPoint).mul(rotation).add(hitPoint);
+        // TODO: 4/16/2018 add rotation 
+        tmp.set(vertex.savedState.position).add(hitPoint).sub(startHitPoint);
         vertex.position.set(vertex.savedState.position).lerp(tmp, calculateStrength(vertex.savedState.position.dst(startHitPoint)));
     }
 

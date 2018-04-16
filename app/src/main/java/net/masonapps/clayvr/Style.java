@@ -11,6 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageTextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 
 import net.masonapps.clayvr.environment.GradientSphere;
 
@@ -48,8 +49,8 @@ public class Style {
     public static final Color TITLE_FONT_COLOR = new Color(FONT_COLOR);
     public static final Color SLIDER_BG_COLOR = new Color(Color.GRAY);
     public static final Color COLOR_WINDOW = new Color(0x000000aa);
-    private static final Color COLOR_GRADIENT_TOP = new Color(Color.LIGHT_GRAY);
-    private static final Color COLOR_GRADIENT_MIDDLE = new Color(Color.GRAY);
+    private static final Color COLOR_GRADIENT_TOP = new Color(Color.GRAY);
+    private static final Color COLOR_GRADIENT_MIDDLE = new Color(Color.LIGHT_GRAY);
     private static final Color COLOR_GRADIENT_BOTTOM = new Color(Color.DARK_GRAY);
     private static final Color COLOR_TITLE_BAR = new Color(COLOR_PRIMARY);
 
@@ -63,6 +64,13 @@ public class Style {
     public static ImageTextButton.ImageTextButtonStyle createImageTextButtonStyle(Skin skin, String name) {
         final ImageTextButton.ImageTextButtonStyle imageTextButtonStyle = new ImageTextButton.ImageTextButtonStyle(skin.get(DEFAULT, ImageTextButton.ImageTextButtonStyle.class));
         imageTextButtonStyle.imageUp = skin.newDrawable(name);
+        return imageTextButtonStyle;
+    }
+
+    public static ImageTextButton.ImageTextButtonStyle createStandAloneImageTextButtonStyle(Skin skin, String name) {
+        final ImageTextButton.ImageTextButtonStyle imageTextButtonStyle = new ImageTextButton.ImageTextButtonStyle(skin.get(DEFAULT, ImageTextButton.ImageTextButtonStyle.class));
+        imageTextButtonStyle.imageUp = skin.newDrawable(name);
+        imageTextButtonStyle.over = skin.newDrawable(Drawables.window, COLOR_WINDOW);
         return imageTextButtonStyle;
     }
 
@@ -100,6 +108,10 @@ public class Style {
 
     public static WindowVR.WindowVrStyle createWindowVrStyle(Skin skin) {
         return new WindowVR.WindowVrStyle(skin.newDrawable(Drawables.window, COLOR_WINDOW), skin.newDrawable(Drawables.drag_bar, COLOR_TITLE_BAR), skin.getFont(DEFAULT_FONT), TITLE_FONT_COLOR);
+    }
+
+    public static Drawable createBackgroundDrawable(Skin skin) {
+        return skin.newDrawable(Style.Drawables.window, Style.COLOR_WINDOW);
     }
 
     public static class Drawables {

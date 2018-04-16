@@ -21,6 +21,9 @@ import net.masonapps.clayvr.Style;
 import org.masonapps.libgdxgooglevr.GdxVr;
 import org.masonapps.libgdxgooglevr.ui.VirtualStage;
 
+import java.util.Arrays;
+import java.util.Objects;
+
 /**
  * Created by Bob on 8/15/2017.
  */
@@ -55,49 +58,58 @@ public class SculptControlsVirtualStage extends VirtualStage {
         interpolation = Interpolation.swing;
 
         label = new Label("", skin, Style.DEFAULT_FONT, Style.COLOR_ACCENT);
+        label.setFontScale(0.2f);
         labelStrings = new String[]{topLabel, bottomLabel, leftLabel, rightLabel};
 
         images = new Image[4];
         backgroundImages = new Image[4];
-
-        final Drawable backgroundDrawable = skin.newDrawable(Style.Drawables.touch_pad_background, Style.COLOR_PRIMARY);
-        backgroundImages[QuadButtonListener.TOP] = createBackgroundImage(backgroundDrawable, angles[QuadButtonListener.TOP]);
-        addActor(backgroundImages[QuadButtonListener.TOP]);
-
-        backgroundImages[QuadButtonListener.BOTTOM] = createBackgroundImage(backgroundDrawable, angles[QuadButtonListener.BOTTOM]);
-        addActor(backgroundImages[QuadButtonListener.BOTTOM]);
-
-        backgroundImages[QuadButtonListener.LEFT] = createBackgroundImage(backgroundDrawable, angles[QuadButtonListener.LEFT]);
-        addActor(backgroundImages[QuadButtonListener.LEFT]);
-
-        backgroundImages[QuadButtonListener.RIGHT] = createBackgroundImage(backgroundDrawable, angles[QuadButtonListener.RIGHT]);
-        addActor(backgroundImages[QuadButtonListener.RIGHT]);
 
         buttonDown = createBackgroundImage(skin.newDrawable(Style.Drawables.touch_pad_button_down, Style.COLOR_PRIMARY_LIGHT), 0f);
         buttonDown.setScale(focusedScale);
         buttonDown.setVisible(false);
         addActor(buttonDown);
 
-        final Image topImage = createImage(topDrawable, angles[QuadButtonListener.TOP]);
-        images[QuadButtonListener.TOP] = topImage;
-        addActor(topImage);
+        addImage(topDrawable, QuadButtonListener.TOP);
 
-        final Image bottomImage = createImage(bottomDrawable, angles[QuadButtonListener.BOTTOM]);
-        images[QuadButtonListener.BOTTOM] = bottomImage;
-        addActor(bottomImage);
+        addImage(bottomDrawable, QuadButtonListener.BOTTOM);
 
-        final Image leftImage = createImage(leftDrawable, angles[QuadButtonListener.LEFT]);
-        images[QuadButtonListener.LEFT] = leftImage;
-        addActor(leftImage);
+        addImage(leftDrawable, QuadButtonListener.LEFT);
 
-        final Image rightImage = createImage(rightDrawable, angles[QuadButtonListener.RIGHT]);
-        images[QuadButtonListener.RIGHT] = rightImage;
-        addActor(rightImage);
+        addImage(rightDrawable, QuadButtonListener.RIGHT);
+
+        final Drawable backgroundDrawable = skin.newDrawable(Style.Drawables.touch_pad_background, Style.COLOR_PRIMARY);
+        addBackgroundImage(backgroundDrawable, QuadButtonListener.TOP);
+
+        addBackgroundImage(backgroundDrawable, QuadButtonListener.BOTTOM);
+
+        addBackgroundImage(backgroundDrawable, QuadButtonListener.LEFT);
+
+        addBackgroundImage(backgroundDrawable, QuadButtonListener.RIGHT);
+
+        Arrays.stream(backgroundImages)
+                .filter(Objects::nonNull)
+                .forEach(this::addActor);
+        Arrays.stream(images)
+                .filter(Objects::nonNull)
+                .forEach(this::addActor);
 
         addActor(label);
     }
 
+    private void addBackgroundImage(Drawable backgroundDrawable, int i) {
+        if (images[i] != null) {
+            backgroundImages[i] = createBackgroundImage(backgroundDrawable, angles[i]);
+        }
+    }
+
+    private void addImage(Drawable drawable, int i) {
+        final Image image = createImage(drawable, angles[i]);
+        images[i] = image;
+    }
+
+    @Nullable
     private Image createImage(Drawable drawable, float angle) {
+        if (drawable == null) return null;
         final float imageWidth = getWidth() / 6;
         final float imageHeight = getHeight() / 6;
         final Image image = new Image(drawable);
@@ -135,9 +147,9 @@ public class SculptControlsVirtualStage extends VirtualStage {
         super.setVisible(visible);
         if (!visible && isTouchDown) {
             buttonDown.setVisible(false);
-            for (Image image : backgroundImages) {
-                image.setVisible(true);
-            }
+            Arrays.stream(backgroundImages)
+                    .filter(Objects::nonNull)
+                    .forEach(image -> image.setVisible(true));
             if (listener != null)
                 listener.onButtonUp();
             isTouchDown = false;
@@ -175,24 +187,28 @@ public class SculptControlsVirtualStage extends VirtualStage {
 
     private void scaleImages(int focusedButton) {
         for (int i = 0; i < backgroundImages.length; i++) {
+            final Image backgroundImage = backgroundImages[i];
+            if (backgroundImage == null) continue;
 //            tmpV2.set(0, midRadius * IMAGE_OFFSET).rotate(angles[i]);
             if (i == focusedButton) {
 //                tmpV2.set(0, midRadius * focusedScale).rotate(angles[i]);
 //                images[i].addAction(Actions.moveToAligned(tmpV2.x, tmpV2.y, Align.center));
-                backgroundImages[i].addAction(Actions.scaleTo(focusedScale, focusedScale, actionDuration, interpolation));
+                backgroundImage.addAction(Actions.scaleTo(focusedScale, focusedScale, actionDuration, interpolation));
             } else {
 //                images[i].addAction(Actions.moveToAligned(tmpV2.x, tmpV2.y, Align.center));
-                backgroundImages[i].addAction(Actions.scaleTo(1f, 1f, actionDuration, interpolation));
+                backgroundImage.addAction(Actions.scaleTo(1f, 1f, actionDuration, interpolation));
             }
         }
     }
 
     private void hideImage(int focusedButton) {
         for (int i = 0; i < backgroundImages.length; i++) {
+            final Image backgroundImage = backgroundImages[i];
+            if (backgroundImage == null) continue;
             if (i == focusedButton)
-                backgroundImages[i].setVisible(false);
+                backgroundImage.setVisible(false);
             else
-                backgroundImages[i].setVisible(true);
+                backgroundImage.setVisible(true);
         }
     }
 
@@ -231,7 +247,8 @@ public class SculptControlsVirtualStage extends VirtualStage {
                     break;
                 default:
                     label.setVisible(true);
-                    label.setText(labelStrings[focusedButton]);
+                    final String str = labelStrings[focusedButton];
+                    label.setText(str == null ? "" : str);
                     label.setPosition(0, 0, Align.center);
                     break;
             }
@@ -257,9 +274,9 @@ public class SculptControlsVirtualStage extends VirtualStage {
             if (!isVisible()) return;
             isTouchDown = false;
             buttonDown.setVisible(false);
-            for (Image image : backgroundImages) {
-                image.setVisible(true);
-            }
+            Arrays.stream(backgroundImages)
+                    .filter(Objects::nonNull)
+                    .forEach(image -> image.setVisible(true));
             if (listener != null)
                 listener.onButtonUp();
         }

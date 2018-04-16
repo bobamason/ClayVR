@@ -123,6 +123,7 @@ public class StartupScreen extends RoomScreen {
                 }
             });
             newBtnStage.setSize((int) newBtn.getWidth(), (int) newBtn.getHeight());
+            newBtnStage.setBackground(Style.createBackgroundDrawable(skin));
             newBtnStage.addActor(newBtn);
             cylCoord.set(2f, 90f + 10f, 0f);
             newBtnStage.setPosition(cylCoord.toCartesian());
@@ -140,6 +141,7 @@ public class StartupScreen extends RoomScreen {
                 }
             });
             openBtnStage.setSize((int) openBtn.getWidth(), (int) openBtn.getHeight());
+            openBtnStage.setBackground(Style.createBackgroundDrawable(skin));
             openBtnStage.addActor(openBtn);
             cylCoord.set(2f, 90f - 10f, 0f);
             openBtnStage.setPosition(cylCoord.toCartesian());
@@ -173,6 +175,7 @@ public class StartupScreen extends RoomScreen {
                 }
             });
             stage.setSize((int) button.getWidth(), (int) button.getHeight());
+            stage.setBackground(Style.createBackgroundDrawable(skin));
             stage.addActor(button);
             return stage;
         }
