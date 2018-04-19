@@ -73,10 +73,8 @@ public class ArmModel {
         updateHandedness();
         updateTorsoDirection();
         applyArmModel(controller);
-//        UpdateTransparency();
-        updatePointer();
 
-        applyCameraTransform();
+        applyPointerTransform();
 
         firstUpdate = false;
         if (listener != null) {
@@ -173,22 +171,15 @@ public class ArmModel {
         Pools.free(lerpRotation);
     }
 
-    private void updatePointer() {
-        // Determine the direction of the ray.
-        pointerPosition.set(POINTER_OFFSET).mul(wristRotation).add(wristPosition);
-        pointerRotation.set(wristRotation).mul(pointerTilt);
-    }
-
-    private void applyCameraTransform() {
+    private void applyPointerTransform() {
         final Quaternion tmpQ = Pools.obtain(Quaternion.class);
 
         final Vector3 pos = GdxVr.app.getVrApplicationAdapter().getVrCamera().position;
         GdxVr.app.getVrApplicationAdapter().getVrCamera().getQuaternion(tmpQ);
         pointerPosition.set(POINTER_OFFSET).mul(wristRotation).add(wristPosition);
-        pointerRotation.mulLeft(tmpQ);
         wristRotation.mulLeft(tmpQ);
         pointerPosition.set(POINTER_OFFSET).mul(wristRotation).add(wristPosition).add(pos);
-//        pointerRotation.mulLeft(tmpQ.setFromAxes(false, tmp.x, tmp.y, tmp.z, tmp2.x, tmp2.y, tmp2.z, dir.x, dir.y, dir.z));
+        pointerRotation.set(wristRotation).mul(pointerTilt);
         Pools.free(tmpQ);
     }
 
