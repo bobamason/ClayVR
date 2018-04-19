@@ -583,7 +583,7 @@ public class VrAndroidInput implements Input, View.OnKeyListener {
             isControllerConnected = true;
             armModel.updateHeadDirection(GdxVr.app.getVrApplicationAdapter().getVrCamera().direction);
             armModel.onControllerUpdate(controller);
-            controllerOrientation.set(armModel.pointerRotation);
+            controllerOrientation.set(armModel.wristRotation);
             controllerPosition.set(armModel.pointerPosition);
         } else {
             isControllerConnected = false;

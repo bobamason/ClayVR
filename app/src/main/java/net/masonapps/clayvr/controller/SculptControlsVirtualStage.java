@@ -2,6 +2,7 @@ package net.masonapps.clayvr.controller;
 
 import android.support.annotation.Nullable;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Quaternion;
@@ -42,7 +43,7 @@ public class SculptControlsVirtualStage extends VirtualStage {
     private float actionDuration = 0.25f;
     @Nullable
     private SculptControlsListener listener = null;
-    private Vector3 offset = new Vector3(0f, 0.010f, -0.034f);
+    private Vector3 offset = new Vector3(0f, 0.010f, -0.043f);
     private Interpolation interpolation;
     private Vector3 tmp = new Vector3();
     private Vector2 tmpV2 = new Vector2();
@@ -57,8 +58,9 @@ public class SculptControlsVirtualStage extends VirtualStage {
         midRadius = getWidth() / 4f;
         interpolation = Interpolation.swing;
 
-        label = new Label("", skin, Style.DEFAULT_FONT, Style.COLOR_ACCENT);
-        label.setFontScale(0.5f);
+        label = new Label("", skin, Style.DEFAULT_FONT, Color.WHITE);
+        label.setAlignment(Align.center, Align.center);
+        label.setFontScale(0.25f);
         labelStrings = new String[]{topLabel, bottomLabel, leftLabel, rightLabel};
 
         images = new Image[4];
@@ -189,11 +191,10 @@ public class SculptControlsVirtualStage extends VirtualStage {
         for (int i = 0; i < backgroundImages.length; i++) {
             final Image backgroundImage = backgroundImages[i];
             if (backgroundImage == null) continue;
-//            tmpV2.set(0, midRadius * IMAGE_OFFSET).rotate(angles[i]);
             if (i == focusedButton) {
-//                tmpV2.set(0, midRadius * focusedScale).rotate(angles[i]);
-//                images[i].addAction(Actions.moveToAligned(tmpV2.x, tmpV2.y, Align.center));
                 backgroundImage.addAction(Actions.scaleTo(focusedScale, focusedScale, actionDuration, interpolation));
+                tmpV2.set(0, midRadius * 2.5f).rotate(angles[focusedButton]);
+
             } else {
 //                images[i].addAction(Actions.moveToAligned(tmpV2.x, tmpV2.y, Align.center));
                 backgroundImage.addAction(Actions.scaleTo(1f, 1f, actionDuration, interpolation));
@@ -240,16 +241,26 @@ public class SculptControlsVirtualStage extends VirtualStage {
         @Override
         public void onFocusedButtonChanged(int focusedButton) {
             scaleImages(focusedButton);
+            if (focusedButton == QuadButtonListener.NONE) {
+                label.setText("");
+                label.setVisible(false);
+            } else {
+                label.setVisible(true);
+                final String str = labelStrings[focusedButton];
+                label.setText(str == null ? "" : str);
+            }
             switch (focusedButton) {
-                case QuadButtonListener.NONE:
-                    label.setText("");
-                    label.setVisible(false);
+                case QuadButtonListener.TOP:
+                    label.setPosition(tmpV2.x, tmpV2.y + label.getPrefHeight() / 2f);
                     break;
-                default:
-                    label.setVisible(true);
-                    final String str = labelStrings[focusedButton];
-                    label.setText(str == null ? "" : str);
-                    label.setPosition(0, 0, Align.center);
+                case QuadButtonListener.BOTTOM:
+                    label.setPosition(tmpV2.x, tmpV2.y - label.getPrefHeight() / 2f);
+                    break;
+                case QuadButtonListener.LEFT:
+                    label.setPosition(tmpV2.x - label.getPrefWidth() / 2f, tmpV2.y);
+                    break;
+                case QuadButtonListener.RIGHT:
+                    label.setPosition(tmpV2.x + label.getPrefWidth() / 2f, tmpV2.y);
                     break;
             }
         }

@@ -21,6 +21,7 @@ import com.badlogic.gdx.math.Plane;
 import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.math.collision.Ray;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.Array;
@@ -171,7 +172,7 @@ public class SculptingScreen extends RoomScreen {
 
         updateSculptEntityPosition();
 
-        buttonControls = new SculptControlsVirtualStage(spriteBatch, skin, 0.065f,
+        buttonControls = new SculptControlsVirtualStage(spriteBatch, skin, 0.075f,
                 skin.newDrawable(Style.Drawables.ic_pan),
                 Style.getStringResource(R.string.pan, "pan"),
                 null,
@@ -380,11 +381,11 @@ public class SculptingScreen extends RoomScreen {
 
     private void updateSymmetryPlaneTransform() {
         if (!sculptHandler.getBrush().useSymmetry()) return;
-        final float s = sculptEntity.getRadius() * zoom;
+        final BoundingBox bounds = sculptEntity.getBounds();
         final Matrix4 tmpMat = Pools.obtain(Matrix4.class);
         sculptEntity.recalculateTransform();
         sculptEntity.getTransform(tmpMat);
-        symmetryPlane.setTransform(tmpMat.scale(s, s, s));
+        symmetryPlane.setTransform(tmpMat.scale(1f, bounds.getHeight(), bounds.getDepth()));
         Pools.free(tmpMat);
     }
 
