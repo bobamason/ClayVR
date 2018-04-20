@@ -42,7 +42,6 @@ import net.masonapps.clayvr.sculpt.SculptHandler;
 import net.masonapps.clayvr.sculpt.SculptMesh;
 import net.masonapps.clayvr.sculpt.SculptingInterface;
 import net.masonapps.clayvr.ui.ExportDialog;
-import net.masonapps.clayvr.ui.ViewControls;
 
 import org.masonapps.libgdxgooglevr.GdxVr;
 import org.masonapps.libgdxgooglevr.gfx.Entity;
@@ -90,7 +89,6 @@ public class SculptingScreen extends RoomScreen {
     private float startZoom = 1f;
     private InputMode currentInputMode = InputMode.VIEW;
     private State currentState = STATE_NONE;
-    private volatile boolean isMeshUpdating = false;
     private Quaternion snappedRotation = new Quaternion();
     private Vector3 snappedPosition = new Vector3();
     private final SculptHandler sculptHandler;
@@ -140,19 +138,14 @@ public class SculptingScreen extends RoomScreen {
             }
 
             @Override
-            public void onPan(float dx, float dy) {
-                pan.add(dx, dy).limit(5f);
-                updateSculptEntityPosition();
-            }
-
-            @Override
-            public void onZoom(float zoom) {
-                SculptingScreen.this.zoom = zoom;
-                // TODO: 4/12/2018 zoom 
+            public void onViewSelected(Side side) {
+                RotationUtil.rotateToViewSide(snappedRotation, side);
+                animateToSnappedRotation();
             }
         };
         final Skin skin = getSculptingVrGame().getSkin();
         sculptingInterface = new SculptingInterface(brush, spriteBatch, skin, sculptUiEventListener);
+        // TODO: 4/20/2018 uncomment 
         sculptingInterface.loadWindowPositions(PreferenceManager.getDefaultSharedPreferences(GdxVr.app.getContext()));
 
         sculptHandler = new SculptHandler(bvh, brush, sculptMesh, sculptingInterface::setDropperColor);
@@ -219,18 +212,6 @@ public class SculptingScreen extends RoomScreen {
                     transformAction = ACTION_NONE;
                     currentState = STATE_NONE;
                 }
-            }
-        });
-
-        sculptingInterface.setViewControlsListener(new ViewControls.ViewControlListener() {
-            @Override
-            public void onViewSelected(Side side) {
-                final Quaternion tmpQ = Pools.obtain(Quaternion.class);
-                RotationUtil.rotateToViewSide(tmpQ, side);
-                rotation.set(tmpQ);
-                lastRotation.set(tmpQ);
-                updateSymmetryPlaneTransform();
-                Pools.free(tmpQ);
             }
         });
 
@@ -302,44 +283,27 @@ public class SculptingScreen extends RoomScreen {
 
     @Override
     public void update() {
-//        ElapsedTimer.getInstance().print("update");
         super.update();
         sculptingInterface.act();
         symmetryPlane.setVisible(sculptHandler.getBrush().useSymmetry());
         buttonControls.act();
 
         rotationAnimator.update(GdxVr.graphics.getDeltaTime());
+
+        if (currentInputMode == InputMode.SCULPT) {
+            sphere.setPosition(sculptHandler.getTransformedHitPoint()).setScale(sculptEntity.getScaleX(), sculptEntity.getScaleY(), sculptEntity.getScaleZ()).scale(sculptHandler.getBrush().getRadius());
+            getSculptingVrGame().getCursor().position.set(sculptHandler.getTransformedHitPoint());
+        }
+        
 //        Logger.d("fps: " + GdxVr.graphics.getFramesPerSecond());
     }
 
     @Override
     public void render(Camera camera, int whichEye) {
-//        ElapsedTimer.getInstance().print("render");
         super.render(camera, whichEye);
-//        shapeRenderer.begin();
-//        shapeRenderer.setProjectionMatrix(camera.combined);
-//        DebugUtils.debugBVH(shapeRenderer, sculptHandler.getBVH(), sculptEntity.getTransform(), Color.YELLOW);
-//        shapeRenderer.end();
-//        final Matrix4 tmpMat = Pools.obtain(Matrix4.class);
-//        sculptMesh.renderEdges(camera, sculptEntity.getTransform(tmpMat));
-//        Pools.free(tmpMat);
-//        drawBrushStroke(camera);
-
-//        if (currentState == STATE_SCULPTING) {
-//            final Matrix4 tmpMat = Pools.obtain(Matrix4.class);
-//            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-//            shapeRenderer.setProjectionMatrix(camera.combined);
-//            shapeRenderer.setTransformMatrix(sculptEntity.getTransform(tmpMat));
-//            shapeRenderer.setColor(Color.BLACK);
-//            shapeRenderer.box(searchBB.getCenterX(), searchBB.getCenterY(), searchBB.getCenterZ(), searchBB.getWidth(), searchBB.getHeight(), searchBB.getDepth());
-//            shapeRenderer.end();
-//            Pools.free(tmpMat);
-//        }
 
         sculptingInterface.draw(camera);
         buttonControls.draw(camera);
-
-//        ElapsedTimer.getInstance().start("render");
     }
 
     private void rotate() {
@@ -436,10 +400,6 @@ public class SculptingScreen extends RoomScreen {
         } else {
             getSculptingVrGame().setCursorVisible(true);
         }
-        if (currentInputMode == InputMode.SCULPT) {
-            sphere.setPosition(sculptHandler.getTransformedHitPoint()).setScale(sculptEntity.getScaleX(), sculptEntity.getScaleY(), sculptEntity.getScaleZ()).scale(sculptHandler.getBrush().getRadius());
-            getSculptingVrGame().getCursor().position.set(sculptHandler.getTransformedHitPoint());
-        }
         if (controller.clickButtonState) {
             if (!isTouchPadClicked) {
                 onTouchPadButtonDown();
@@ -463,7 +423,6 @@ public class SculptingScreen extends RoomScreen {
                 currentState = STATE_NONE;
                 break;
             case SCULPT:
-                if (isMeshUpdating) break;
                 currentState = STATE_SCULPTING;
                 ((ColorAttribute) sphere.modelInstance.materials.get(0).get(ColorAttribute.Diffuse)).color.set(Color.YELLOW);
                 sculptingInterface.setAlpha(UI_ALPHA);
@@ -493,17 +452,7 @@ public class SculptingScreen extends RoomScreen {
                 break;
             case STATE_VIEW_TRANSFORM:
                 if (RotationUtil.snap(rotation, snappedRotation, 0.1f)) {
-                    final Quaternion rotDiff = Pools.obtain(Quaternion.class);
-                    rotDiff.set(rotation).conjugate().mulLeft(snappedRotation);
-                    final float angleRad = rotDiff.getAngleRad();
-                    final float duration = Math.abs(angleRad < MathUtils.PI ? angleRad : MathUtils.PI2 - angleRad) / MathUtils.PI;
-                    Pools.free(rotDiff);
-                    rotationAnimator.setDuration(duration);
-                    rotationAnimator.start();
-
-                    snappedPosition.set(position);
-//                    positionAnimator.setDuration(duration);
-//                    positionAnimator.start();
+                    animateToSnappedRotation();
                 }
                 transformAction = ACTION_NONE;
                 currentState = STATE_NONE;
@@ -514,20 +463,28 @@ public class SculptingScreen extends RoomScreen {
         sculptingInterface.setVisible(true);
     }
 
+    private void animateToSnappedRotation() {
+        final Quaternion rotDiff = Pools.obtain(Quaternion.class);
+        rotDiff.set(rotation).conjugate().mulLeft(snappedRotation);
+        final float angleRad = rotDiff.getAngleRad();
+        final float duration = Math.abs(angleRad < MathUtils.PI ? angleRad : MathUtils.PI2 - angleRad) / MathUtils.PI;
+        Pools.free(rotDiff);
+        rotationAnimator.setDuration(duration);
+        rotationAnimator.start();
+    }
+
     private void updateCurrentInputMode() {
         switch (currentState) {
             case STATE_NONE:
                 if (sculptingInterface.isCursorOver())
                     currentInputMode = InputMode.UI;
-                else if (!isMeshUpdating) {
-                    if (sculptEntity.intersectsRayBounds(GdxVr.input.getInputRay(), hitPoint)) {
+                else {
+                    sculptHandler.onControllerUpdate();
+                    if (sculptHandler.isCursorOver()) 
                         currentInputMode = InputMode.SCULPT;
-                        sculptHandler.onControllerUpdate();
-//                        Logger.d("bounds hitPoint = " + hitPoint);
-                    } else
+                    else
                         currentInputMode = InputMode.VIEW;
-                } else
-                    currentInputMode = InputMode.VIEW;
+                }
                 break;
             case STATE_SCULPTING:
                 currentInputMode = InputMode.SCULPT;

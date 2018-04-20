@@ -104,20 +104,18 @@ public class VrGame extends VrApplicationAdapter {
         if (shouldShowCursor(vrInputProcessor)) {
             cursor.position.set(vrInputProcessor.getHitPoint3D());
             cursor.lookAtTarget(ray.origin, Vector3.Y);
-            cursor.setVisible(true);
         } else {
             cursor.position.set(ray.origin.x + ray.direction.x * 2.5f, ray.origin.y + ray.direction.y * 2.5f, ray.origin.z + ray.direction.z * 2.5f);
             cursor.lookAtTarget(ray.origin, Vector3.Y);
 //            cursor.setVisible(!GdxVr.input.isControllerConnected());
-            cursor.setVisible(true);
         }
         if (screen != null) screen.update();
     }
 
     @Override
     public void onDrawFrame(HeadTransform headTransform, Eye leftEye, Eye rightEye) {
-        if (screen != null) screen.onDrawFrame(headTransform, leftEye, rightEye);
         super.onDrawFrame(headTransform, leftEye, rightEye);
+        if (screen != null) screen.onDrawFrame(headTransform, leftEye, rightEye);
     }
 
     @Override

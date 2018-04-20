@@ -20,11 +20,11 @@ import com.badlogic.gdx.utils.Pools;
 
 import net.masonapps.clayvr.R;
 import net.masonapps.clayvr.Style;
+import net.masonapps.clayvr.math.Side;
 import net.masonapps.clayvr.ui.ColorPickerSimple;
 import net.masonapps.clayvr.ui.ConfirmDialog;
 import net.masonapps.clayvr.ui.DialogVR;
 import net.masonapps.clayvr.ui.ExportDialog;
-import net.masonapps.clayvr.ui.PanStage;
 import net.masonapps.clayvr.ui.VerticalImageTextButton;
 import net.masonapps.clayvr.ui.ViewControls;
 
@@ -55,11 +55,10 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
     private final ColorPickerSimple colorPicker;
     private final ConfirmDialog confirmDialog;
     private final ViewControls viewControls;
+    private final ExportDialog exportDialog;
     private ImageButton brushButton;
     private CheckBox flipCheckBox;
     private CheckBox symmetryCheckBox;
-    private ExportDialog exportDialog;
-    private PanStage panStage;
 
     public SculptingInterface(Brush brush, Batch spriteBatch, Skin skin, SculptUiEventListener listener) {
         super(2f, 4f);
@@ -75,107 +74,13 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
         brushSettingsTable = new WindowTableVR(spriteBatch, skin, 448, 480, Style.getStringResource(R.string.title_brush_settings, "Brush Settings"), windowStyleWithClose);
         viewControls = new ViewControls(spriteBatch, skin, windowStyleWithClose);
         exportDialog = new ExportDialog(spriteBatch, skin, eventListener::onExportClicked);
-        panStage = new PanStage(spriteBatch, skin, eventListener::onPan);
+        initBrushSettingsStage();
         initButtonBar();
         initColorTable();
         initConfirmDialog();
         initExportDialog();
-        initPanStage();
         initBrushTypeTable();
-        initBrushSettingsStage();
         initViewControls();
-    }
-
-    private void initButtonBar() {
-        final Table buttonBarTable = buttonBar.getTable();
-
-        final VerticalImageTextButton undoBtn = new VerticalImageTextButton(Style.getStringResource(R.string.undo, "undo"), Style.createImageTextButtonStyle(skin, Style.Drawables.ic_undo));
-        undoBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                eventListener.onUndoClicked();
-            }
-        });
-        buttonBarTable.add(undoBtn).padTop(PADDING).padBottom(PADDING).padLeft(PADDING).padRight(PADDING);
-
-        final VerticalImageTextButton redoBtn = new VerticalImageTextButton(Style.getStringResource(R.string.redo, "redo"), Style.createImageTextButtonStyle(skin, Style.Drawables.ic_redo));
-        redoBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                eventListener.onRedoClicked();
-            }
-        });
-        buttonBarTable.add(redoBtn).padTop(PADDING).padBottom(PADDING).padRight(PADDING);
-
-        final VerticalImageTextButton brushBtn = new VerticalImageTextButton(Style.getStringResource(R.string.brush, "brush"), Style.createImageTextButtonStyle(skin, Style.Drawables.ic_button_brush));
-        brushBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                brushSettingsTable.setVisible(!brushSettingsTable.isVisible());
-                colorPicker.setVisible(brush.getType() == Brush.Type.VERTEX_PAINT && brushSettingsTable.isVisible());
-            }
-        });
-        buttonBarTable.add(brushBtn).padTop(PADDING).padBottom(PADDING).padRight(PADDING);
-
-        final VerticalImageTextButton viewBtn = new VerticalImageTextButton(Style.getStringResource(R.string.view, "view"), Style.createImageTextButtonStyle(skin, Style.Drawables.ic_rotate));
-        viewBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                viewControls.setVisible(!viewControls.isVisible());
-            }
-        });
-        buttonBarTable.add(viewBtn).padTop(PADDING).padBottom(PADDING).padRight(PADDING);
-
-        final VerticalImageTextButton panBtn = new VerticalImageTextButton(Style.getStringResource(R.string.pan, "pan"), Style.createImageTextButtonStyle(skin, Style.Drawables.ic_pan));
-        panBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                if (panStage.isVisible())
-                    panStage.setVisible(false);
-                else
-                    panStage.setVisible(true);
-            }
-        });
-        buttonBarTable.add(panBtn).padTop(PADDING).padBottom(PADDING).padRight(PADDING);
-
-        final VerticalImageTextButton exportBtn = new VerticalImageTextButton(Style.getStringResource(R.string.export, "export"), Style.createImageTextButtonStyle(skin, Style.Drawables.ic_export));
-        exportBtn.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                if (exportDialog.isVisible())
-                    exportDialog.hide();
-                else
-                    exportDialog.show();
-            }
-        });
-        buttonBarTable.add(exportBtn).padTop(PADDING).padBottom(PADDING).padRight(PADDING);
-
-        addProcessor(buttonBar);
-        buttonBar.resizeToFitTable();
-        buttonBar.setPosition(new CylindricalCoordinate(getRadius(), 90f, -0.75f, CylindricalCoordinate.AngleMode.degrees).toCartesian());
-        buttonBar.lookAt(new Vector3(0, buttonBar.getPosition().y, 0), Vector3.Y);
-    }
-
-    private void initConfirmDialog() {
-        confirmDialog.setVisible(false);
-        confirmDialog.setBackground(skin.newDrawable(Style.Drawables.window, Style.COLOR_WINDOW));
-        confirmDialog.setPosition(new CylindricalCoordinate(getRadius(), 90f, 0f, CylindricalCoordinate.AngleMode.degrees).toCartesian());
-        addProcessor(confirmDialog);
-    }
-
-    private void initExportDialog() {
-        exportDialog.dismiss();
-        exportDialog.setBackground(skin.newDrawable(Style.Drawables.window, Style.COLOR_WINDOW));
-        exportDialog.setPosition(new CylindricalCoordinate(getRadius(), 90f, 0f, CylindricalCoordinate.AngleMode.degrees).toCartesian());
-        addProcessor(exportDialog);
-    }
-
-    private void initPanStage() {
-        panStage.setVisible(false);
-        panStage.setBackground(skin.newDrawable(Style.Drawables.window, new Color(0.5f, 0.5f, 0.5f, 0.05f)));
-
-        panStage.setPosition(new CylindricalCoordinate(getRadius(), 90f, 0f, CylindricalCoordinate.AngleMode.degrees).toCartesian());
-        addProcessor(panStage);
     }
 
     private void initBrushSettingsStage() {
@@ -237,11 +142,84 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
         });
         table.add(symmetryCheckBox).padTop(PADDING).expandX().center();
 
-        final CylindricalCoordinate coordinate = new CylindricalCoordinate(getRadius(), 130f, 0.35f, CylindricalCoordinate.AngleMode.degrees);
+        final CylindricalCoordinate coordinate = new CylindricalCoordinate(getRadius(), 130f, 0.45f, CylindricalCoordinate.AngleMode.degrees);
         brushSettingsTable.setPosition(coordinate.toCartesian());
         brushSettingsTable.lookAt(new Vector3(0, coordinate.vertical, 0), Vector3.Y);
         brushSettingsTable.setActivationMovement(0);
         addProcessor(brushSettingsTable);
+    }
+
+    private void initButtonBar() {
+        final Table buttonBarTable = buttonBar.getTable();
+
+        final VerticalImageTextButton undoBtn = new VerticalImageTextButton(Style.getStringResource(R.string.undo, "undo"), Style.createImageTextButtonStyle(skin, Style.Drawables.ic_undo));
+        undoBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                eventListener.onUndoClicked();
+            }
+        });
+        buttonBarTable.add(undoBtn).padTop(PADDING).padBottom(PADDING).padLeft(PADDING).padRight(PADDING);
+
+        final VerticalImageTextButton redoBtn = new VerticalImageTextButton(Style.getStringResource(R.string.redo, "redo"), Style.createImageTextButtonStyle(skin, Style.Drawables.ic_redo));
+        redoBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                eventListener.onRedoClicked();
+            }
+        });
+        buttonBarTable.add(redoBtn).padTop(PADDING).padBottom(PADDING).padRight(PADDING);
+
+        final VerticalImageTextButton brushBtn = new VerticalImageTextButton(Style.getStringResource(R.string.brush, "brush"), Style.createImageTextButtonStyle(skin, Style.Drawables.ic_button_brush));
+        brushBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                brushSettingsTable.setVisible(!brushSettingsTable.isVisible());
+                colorPicker.setVisible(brush.getType() == Brush.Type.VERTEX_PAINT && brushSettingsTable.isVisible());
+            }
+        });
+        buttonBarTable.add(brushBtn).padTop(PADDING).padBottom(PADDING).padRight(PADDING);
+
+        final VerticalImageTextButton viewBtn = new VerticalImageTextButton(Style.getStringResource(R.string.view, "view"), Style.createImageTextButtonStyle(skin, Style.Drawables.ic_rotate));
+        viewBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                viewControls.setVisible(!viewControls.isVisible());
+            }
+        });
+        buttonBarTable.add(viewBtn).padTop(PADDING).padBottom(PADDING).padRight(PADDING);
+
+        final VerticalImageTextButton exportBtn = new VerticalImageTextButton(Style.getStringResource(R.string.export, "export"), Style.createImageTextButtonStyle(skin, Style.Drawables.ic_export));
+        exportBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                if (exportDialog.isVisible())
+                    exportDialog.hide();
+                else
+                    exportDialog.show();
+            }
+        });
+        buttonBarTable.add(exportBtn).padTop(PADDING).padBottom(PADDING).padRight(PADDING);
+
+        addProcessor(buttonBar);
+        buttonBar.resizeToFitTable();
+        final float y = brushSettingsTable.getPosition().y - brushSettingsTable.getHeightWorld() / 2f - buttonBar.getHeightWorld() / 2f - 0.175f;
+        buttonBar.setPosition(new CylindricalCoordinate(getRadius(), 135f, y, CylindricalCoordinate.AngleMode.degrees).toCartesian());
+        buttonBar.lookAt(new Vector3(0, buttonBar.getPosition().y, 0), Vector3.Y);
+    }
+
+    private void initConfirmDialog() {
+        confirmDialog.setVisible(false);
+        confirmDialog.setBackground(skin.newDrawable(Style.Drawables.window, Style.COLOR_WINDOW));
+        confirmDialog.setPosition(new CylindricalCoordinate(getRadius(), 90f, 0f, CylindricalCoordinate.AngleMode.degrees).toCartesian());
+        addProcessor(confirmDialog);
+    }
+
+    private void initExportDialog() {
+        exportDialog.dismiss();
+        exportDialog.setBackground(skin.newDrawable(Style.Drawables.window, Style.COLOR_WINDOW));
+        exportDialog.setPosition(new CylindricalCoordinate(getRadius(), 90f, 0f, CylindricalCoordinate.AngleMode.degrees).toCartesian());
+        addProcessor(exportDialog);
     }
 
     private void showConfirmDialog(String msg, Consumer<Boolean> consumer) {
@@ -251,7 +229,8 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
     }
 
     private void initColorTable() {
-        final CylindricalCoordinate coordinate = new CylindricalCoordinate(getRadius(), 50f, 0.35f, CylindricalCoordinate.AngleMode.degrees);
+        final float y = brushSettingsTable.getPosition().y + brushSettingsTable.getHeightWorld() / 2f - colorPicker.getHeightWorld() / 2f;
+        final CylindricalCoordinate coordinate = new CylindricalCoordinate(getRadius(), 30f, y, CylindricalCoordinate.AngleMode.degrees);
         colorPicker.setPosition(coordinate.toCartesian());
         colorPicker.lookAt(new Vector3(0, coordinate.vertical, 0), Vector3.Y);
         colorPicker.setColorListener(brush::setColor);
@@ -346,9 +325,12 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
     }
 
     private void initViewControls() {
-        final CylindricalCoordinate coordinate = new CylindricalCoordinate(getRadius(), 40f, -0.35f, CylindricalCoordinate.AngleMode.degrees);
+        final float y = colorPicker.getPosition().y - colorPicker.getHeightWorld() / 2f - viewControls.getHeightWorld() / 2f - 0.175f;
+        final CylindricalCoordinate coordinate = new CylindricalCoordinate(getRadius(), 35f, y, CylindricalCoordinate.AngleMode.degrees);
         viewControls.setPosition(coordinate.toCartesian());
         viewControls.lookAt(Vector3.Zero, Vector3.Y);
+        viewControls.setListener(eventListener::onViewSelected);
+        viewControls.setVisible(false);
         addProcessor(viewControls);
     }
 
@@ -402,15 +384,7 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
             exportDialog.dismiss();
             return true;
         }
-        if (panStage.isVisible()) {
-            panStage.setVisible(false);
-            return true;
-        }
         return false;
-    }
-
-    public void setViewControlsListener(ViewControls.ViewControlListener listener) {
-        viewControls.setListener(listener);
     }
 
     public void setDropperColor(Color color) {
@@ -428,8 +402,6 @@ public class SculptingInterface extends CylindricalWindowUiContainer {
 
         void onSymmetryChanged(boolean enabled);
 
-        void onPan(float dx, float dy);
-
-        void onZoom(float zoom);
+        void onViewSelected(Side side);
     }
 }

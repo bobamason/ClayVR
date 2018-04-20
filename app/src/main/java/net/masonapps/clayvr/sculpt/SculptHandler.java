@@ -17,7 +17,6 @@ import net.masonapps.clayvr.mesh.Vertex;
 import org.masonapps.libgdxgooglevr.GdxVr;
 import org.masonapps.libgdxgooglevr.gfx.Entity;
 import org.masonapps.libgdxgooglevr.utils.ElapsedTimer;
-import org.masonapps.libgdxgooglevr.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,6 +56,7 @@ public class SculptHandler {
     private volatile boolean shouldDoDropper = false;
     private volatile boolean busySculpting = false;
     private volatile boolean isSculpting = false;
+    private volatile boolean isCursorOver = false;
 
     public SculptHandler(BVH bvh, Brush brush, SculptMesh sculptMesh, DropperListener dropperListener) {
         this.bvh = bvh;
@@ -98,7 +98,6 @@ public class SculptHandler {
     }
 
     public void sculpt() {
-        Logger.d("sculpt()");
         if (busySculpting)
             return;
         busySculpting = true;
@@ -158,18 +157,18 @@ public class SculptHandler {
                 hitPoint.set(rawHitPoint).sub(lastHitPoint).limit(brush.getRadius() * 0.75f).add(lastHitPoint);
             } else
                 hitPoint.set(intersection.hitPoint);
-            transformedHitPoint.set(hitPoint).mul(sculptEntityTransform);
+            synchronized (transformedHitPoint) {
+                transformedHitPoint.set(hitPoint).mul(sculptEntityTransform);
+            }
             rayLength = intersection.t;
         } else {
             updateHitPointUsingRayLength();
-//            Logger.d("no hit");
         }
-//        Logger.d("transformedHitPoint = " + transformedHitPoint);
         return hasIntersection;
     }
 
     private void updateHitPointUsingRayLength() {
-        synchronized (hitPoint) {
+        synchronized (transformedHitPoint) {
             hitPoint.set(ray.direction).scl(rayLength).add(ray.origin);
             transformedHitPoint.set(hitPoint).mul(sculptEntityTransform);
         }
@@ -178,6 +177,7 @@ public class SculptHandler {
     public void onControllerUpdate() {
         synchronized (ray) {
             ray.set(GdxVr.input.getInputRay()).mul(sculptEntity.getInverseTransform());
+            ray.direction.nor();
         }
         synchronized (sculptEntityTransform) {
             sculptEntityTransform.set(sculptEntity.getTransform());
@@ -188,30 +188,28 @@ public class SculptHandler {
         if (isSculpting)
             sculpt();
         else
-            CompletableFuture.runAsync(() -> testBVHIntersection(ray, false), executor);
+            CompletableFuture.runAsync(() -> isCursorOver = testBVHIntersection(ray, false), executor);
     }
 
     public void onTouchPadButtonDown() {
-        Logger.d("onTouchPadButtonDown()");
-        isSculpting = true;
-        synchronized (hitPoint) {
-            startHitPoint.set(hitPoint);
-            lastHitPoint.set(hitPoint);
-        }
-        if (isBrushGrab()) {
-            startRotation.set(currentRotation);
-            CompletableFuture.runAsync(() -> {
+        CompletableFuture.runAsync(() -> {
+            isSculpting = true;
+            synchronized (hitPoint) {
+                startHitPoint.set(hitPoint);
+                lastHitPoint.set(hitPoint);
+            }
+            if (isBrushGrab()) {
+                startRotation.set(currentRotation);
                 bvh.sphereSearch(vertices, hitPoint, brush.getRadius());
                 saveVertexPositions();
+            }
             }, executor);
-        }
     }
 
     public void onTouchPadButtonUp() {
-        Logger.d("onTouchPadButtonUp()");
-        isSculpting = false;
-        shouldDoDropper = false;
         CompletableFuture.runAsync(() -> {
+            isSculpting = false;
+            shouldDoDropper = false;
             Arrays.stream(sculptMesh.getVertexArray()).forEach(vertex -> {
                 vertex.clearFlagSkipSphereTest();
                 vertex.clearSavedFlag();
@@ -304,6 +302,10 @@ public class SculptHandler {
 
     public synchronized Vector3 getTransformedHitPoint() {
         return transformedHitPoint;
+    }
+
+    public boolean isCursorOver() {
+        return isCursorOver;
     }
 
     public interface DropperListener {
