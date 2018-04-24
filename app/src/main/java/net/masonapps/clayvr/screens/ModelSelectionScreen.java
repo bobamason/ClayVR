@@ -10,7 +10,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.Array;
 import com.google.vr.sdk.controller.Controller;
 
-import net.masonapps.clayvr.ui.FileButtonBar;
 import net.masonapps.clayvr.ui.ModelSelectionUI;
 
 import org.masonapps.libgdxgooglevr.GdxVr;
@@ -25,7 +24,7 @@ import java.util.List;
  * Created by Bob on 8/30/2017.
  */
 
-public abstract class ModelSelectionScreen<T> extends RoomScreen implements FileButtonBar.OnFileButtonClicked<T>, ModelSelectionUI.ModelAdapter<T> {
+public abstract class ModelSelectionScreen<T> extends RoomScreen implements ModelSelectionUI.OnFileButtonClicked<T>, ModelSelectionUI.ModelAdapter<T> {
 
     protected final ModelSelectionUI<T> ui;
     

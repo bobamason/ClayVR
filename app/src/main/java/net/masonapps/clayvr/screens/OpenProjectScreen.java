@@ -84,7 +84,7 @@ public class OpenProjectScreen extends ModelSelectionScreen<File> {
             try {
                 copy.createNewFile();
                 FileUtils.copyFile(file, copy);
-                ui.setList(((SculptingVrGame) game).getProjectFileList());
+                ui.addItem(0, file);
                 Log.d(OpenProjectScreen.class.getSimpleName(), "file copied to " + copy.getName());
             } catch (IOException e) {
                 e.printStackTrace();
@@ -98,7 +98,6 @@ public class OpenProjectScreen extends ModelSelectionScreen<File> {
             final String fileName = file.getName();
             final boolean deleted = file.delete();
             if (deleted) {
-                ui.setList(((SculptingVrGame) game).getProjectFileList());
                 Log.d(OpenProjectScreen.class.getSimpleName(), "file " + fileName + " deleted");
             }
         });

@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
@@ -24,7 +25,10 @@ import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.math.collision.Ray;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.utils.Pools;
 import com.google.vr.sdk.controller.Controller;
@@ -37,8 +41,10 @@ import org.masonapps.libgdxgooglevr.gfx.Entity;
 import org.masonapps.libgdxgooglevr.gfx.World;
 import org.masonapps.libgdxgooglevr.input.DaydreamButtonEvent;
 import org.masonapps.libgdxgooglevr.input.DaydreamTouchEvent;
+import org.masonapps.libgdxgooglevr.math.CylindricalCoordinate;
 import org.masonapps.libgdxgooglevr.ui.LabelVR;
 import org.masonapps.libgdxgooglevr.ui.LoadingSpinnerVR;
+import org.masonapps.libgdxgooglevr.ui.TableVR;
 import org.masonapps.libgdxgooglevr.ui.VirtualStage;
 import org.masonapps.libgdxgooglevr.ui.VrUiContainer;
 import org.masonapps.libgdxgooglevr.utils.Logger;
@@ -54,16 +60,11 @@ import java.util.concurrent.CompletionException;
  * Created by Bob on 8/15/2017.
  */
 public class ModelSelectionUI<T> extends VrUiContainer {
-
-    //        private Label vertexCountLabel;
-//        private Label triangleCountLabel;
     public static final float TOUCHPAD_SCALE = 150f;
-    private static final float UI_Z = -2f;
-    private static final float MODEL_RADIUS = 0.5f;
-    private static final Vector3 MODEL_POSITION = new Vector3(0, 0, -1.5f);
-    private static final Vector3 PREVIOUS_POSITION = new Vector3(-1.4f, 0.5f, -2.0f);
-    private static final Vector3 NEXT_POSITION = new Vector3(1.4f, 0.5f, -2.0f);
-    private final FileButtonBar<T> buttonBar;
+    private static final float MODEL_RADIUS = 0.8f;
+    private static final Vector3 MODEL_POSITION = new CylindricalCoordinate(2.5f, 90f, 0.25f, CylindricalCoordinate.AngleMode.degrees).toCartesian();
+    private static final Vector3 PREVIOUS_POSITION = new CylindricalCoordinate(2.5f, 150f, 0f, CylindricalCoordinate.AngleMode.degrees).toCartesian();
+    private static final Vector3 NEXT_POSITION = new CylindricalCoordinate(2.5f, 30f, 0f, CylindricalCoordinate.AngleMode.degrees).toCartesian();
     private final Entity sphere;
     private final GestureDetector gestureDetector;
     private final ModelAdapter<T> adapter;
@@ -137,7 +138,7 @@ public class ModelSelectionUI<T> extends VrUiContainer {
     };
     private Interpolation interpolation = Interpolation.linear;
 
-    public ModelSelectionUI(SpriteBatch spriteBatch, Skin skin, List<T> list, World world, ModelAdapter<T> adapter, FileButtonBar.OnFileButtonClicked<T> listener) {
+    public ModelSelectionUI(SpriteBatch spriteBatch, Skin skin, List<T> list, World world, ModelAdapter<T> adapter, OnFileButtonClicked<T> listener) {
         super();
         this.world = world;
         this.adapter = adapter;
@@ -165,7 +166,7 @@ public class ModelSelectionUI<T> extends VrUiContainer {
         nextSpinner.setVisible(false);
         addProcessor(nextSpinner);
 
-        buttonBar = new FileButtonBar<>(spriteBatch, skin, 560, 112, listener);
+        final FileButtonBar buttonBar = new FileButtonBar(spriteBatch, skin, 560, 112, listener);
         buttonBar.setPosition(MODEL_POSITION.x, MODEL_POSITION.y - MODEL_RADIUS, MODEL_POSITION.z + MODEL_RADIUS);
         buttonBar.lookAt(new Vector3(0, 0, 0), Vector3.Y);
         buttonBar.setVisible(true);
@@ -297,7 +298,7 @@ public class ModelSelectionUI<T> extends VrUiContainer {
         final Vector3 pPos = Pools.obtain(Vector3.class);
         final Vector3 cPos = Pools.obtain(Vector3.class);
         final Vector3 nPos = Pools.obtain(Vector3.class);
-        final float scaleSmall = 1.0f;
+        final float scaleSmall = 0.75f;
         final float scaleLarge = 1.0f;
         final float cS = MathUtils.lerp(scaleLarge, scaleSmall, Math.abs(scrollX));
         float pS;
@@ -305,14 +306,14 @@ public class ModelSelectionUI<T> extends VrUiContainer {
         if (animValue < 0f) {
             final float t = interpolation.apply(-animValue);
             pPos.set(PREVIOUS_POSITION);
-            cPos.set(MODEL_POSITION).lerp(PREVIOUS_POSITION, t);
-            nPos.set(NEXT_POSITION).lerp(MODEL_POSITION, t);
+            cPos.set(MODEL_POSITION).slerp(PREVIOUS_POSITION, t);
+            nPos.set(NEXT_POSITION).slerp(MODEL_POSITION, t);
             pS = scaleSmall;
             nS = MathUtils.lerp(scaleSmall, scaleLarge, t);
         } else {
             final float t = interpolation.apply(animValue);
-            pPos.set(PREVIOUS_POSITION).lerp(MODEL_POSITION, t);
-            cPos.set(MODEL_POSITION).lerp(NEXT_POSITION, t);
+            pPos.set(PREVIOUS_POSITION).slerp(MODEL_POSITION, t);
+            cPos.set(MODEL_POSITION).slerp(NEXT_POSITION, t);
             nPos.set(NEXT_POSITION);
             pS = MathUtils.lerp(scaleSmall, scaleLarge, t);
             nS = scaleSmall;
@@ -348,6 +349,7 @@ public class ModelSelectionUI<T> extends VrUiContainer {
     }
 
     private void dataSetChanged() {
+        destroyAllItems();
         itemCount = list.size();
         currentIndex = MathUtils.clamp(currentIndex, 0, itemCount);
         if (itemCount > 0) {
@@ -370,8 +372,6 @@ public class ModelSelectionUI<T> extends VrUiContainer {
         currentItem = previousItem;
         destroyModelItem(nextItem);
         nextItem = tmp;
-        if (currentItem != null)
-            buttonBar.setT(currentItem.t);
         final int i = currentIndex - 1;
         if (i >= 0) {
             previousItem = new ModelItem<>();
@@ -390,8 +390,6 @@ public class ModelSelectionUI<T> extends VrUiContainer {
         currentItem = nextItem;
         destroyModelItem(previousItem);
         previousItem = tmp;
-        if (currentItem != null)
-            buttonBar.setT(currentItem.t);
         final int i = currentIndex + 1;
         if (i < itemCount) {
             nextItem = new ModelItem<>();
@@ -426,7 +424,6 @@ public class ModelSelectionUI<T> extends VrUiContainer {
         currentItem.targetRotation.idt();
         currentItem.index = currentIndex;
         currentItem.t = list.get(currentIndex);
-        buttonBar.setT(currentItem.t);
         loadModel(currentItem);
 
         if (endIndex < itemCount) {
@@ -441,6 +438,12 @@ public class ModelSelectionUI<T> extends VrUiContainer {
         }
     }
 
+    private void destroyAllItems() {
+        destroyModelItem(previousItem);
+        destroyModelItem(currentItem);
+        destroyModelItem(nextItem);
+    }
+    
     private void destroyModelItem(@Nullable ModelItem modelItem) {
         if (modelItem == null) return;
         if (modelItem.loadModelFuture != null) {
@@ -536,6 +539,10 @@ public class ModelSelectionUI<T> extends VrUiContainer {
         dataSetChanged();
     }
 
+    public T getItem(int index) {
+        return list.get(index);
+    }
+
     public void removeItem(T t) {
         list.remove(t);
         dataSetChanged();
@@ -582,5 +589,58 @@ public class ModelSelectionUI<T> extends VrUiContainer {
         public Quaternion targetRotation = new Quaternion();
         public T t;
         public int index = -1;
+    }
+
+    public interface OnFileButtonClicked<T> {
+
+        void onOpenClicked(final T t);
+
+        void onCopyClicked(final T t);
+
+        void onDeleteClicked(final T t);
+    }
+
+    private class FileButtonBar extends TableVR {
+
+        public FileButtonBar(Batch batch, Skin skin, int tableWidth, int tableHeight, final OnFileButtonClicked<T> listener) {
+            super(batch, skin, tableWidth, tableHeight);
+            final Table buttonBarTable = getTable();
+            setBackground(skin.newDrawable(Style.Drawables.window, Style.COLOR_WINDOW));
+
+            final VerticalImageTextButton openBtn = new VerticalImageTextButton(Style.getStringResource(R.string.open, "open"), Style.createImageTextButtonStyle(skin, Style.Drawables.ic_open));
+            openBtn.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if (currentItem != null && currentItem.t != null)
+                        listener.onOpenClicked(currentItem.t);
+                }
+            });
+            final float padding = 8f;
+            buttonBarTable.add(openBtn).padTop(padding).padBottom(padding).padLeft(padding).padRight(padding);
+
+            final VerticalImageTextButton copyBtn = new VerticalImageTextButton(Style.getStringResource(R.string.copy, "copy"), Style.createImageTextButtonStyle(skin, Style.Drawables.ic_copy));
+            copyBtn.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if (currentItem != null && currentItem.t != null)
+                        listener.onCopyClicked(currentItem.t);
+                }
+            });
+            buttonBarTable.add(copyBtn).padTop(padding).padBottom(padding).padRight(padding);
+
+            final VerticalImageTextButton deleteBtn = new VerticalImageTextButton(Style.getStringResource(R.string.delete, "export"), Style.createImageTextButtonStyle(skin, Style.Drawables.ic_delete));
+            deleteBtn.addListener(new ClickListener() {
+                @Override
+                public void clicked(InputEvent event, float x, float y) {
+                    if (currentItem != null && currentItem.index != -1 && currentItem.t != null) {
+                        removeItem(currentItem.index);
+                        listener.onDeleteClicked(currentItem.t);
+                    }
+                }
+            });
+            buttonBarTable.add(deleteBtn).padTop(padding).padBottom(padding).padRight(padding);
+
+            resizeToFitTable();
+        }
     }
 }
