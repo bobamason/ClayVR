@@ -142,7 +142,7 @@ public class VrGame extends VrApplicationAdapter {
         return controllerModelInstance != null && GdxVr.input.isControllerConnected() && isControllerVisible;
     }
 
-    protected void renderCursor(Camera camera) {
+    public void renderCursor(Camera camera) {
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         if (GdxVr.input.isControllerConnected()) {
@@ -293,5 +293,9 @@ public class VrGame extends VrApplicationAdapter {
 
     public VrCursor getCursor() {
         return cursor;
+    }
+
+    public ShapeRenderer getShapeRenderer() {
+        return shapeRenderer;
     }
 }
